@@ -3,13 +3,11 @@
 
 (() => {
   const CONFIG = {
-    // Leave empty until we deploy and configure the backend.
-    // Later, this will be your Cloudflare Worker URL.
-    apiBase: "",
+  apiBase: "https://braytips-api.mushbrayden.workers.dev",
 
-    timezone: "Africa/Nairobi",
-    refreshIntervalMs: 5 * 60 * 1000
-  };
+  timezone: "Africa/Nairobi",
+  refreshIntervalMs: 5 * 60 * 1000
+};
 
   const state = {
     predictions: [],
