@@ -5,15 +5,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#10233f">
-  <meta name="description" content="BrayTips — football fixtures, predictions and performance tracking.">
+  <meta name="description" content="BrayTips football predictions, match analysis, odds slips and performance tracking.">
   <title>BrayTips | Smart Bets. Better Odds.</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="app.js" defer></script>
-</head>
-<body>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
-    <a href="#overview" class="brand">
+    <a class="brand" href="#dashboard" aria-label="BrayTips home">
       <span class="brand-icon">B</span>
       <span>
         <strong>BrayTips</strong>
@@ -21,224 +29,237 @@
       </span>
     </a>
 
-    <nav>
-      <a class="nav-link active" href="#overview">Overview</a>
-      <a class="nav-link" href="#fixtures">Fixtures</a>
-      <a class="nav-link" href="#team-picks">Team Picks</a>
-      <a class="nav-link" href="#goals">Over / Under</a>
-      <a class="nav-link" href="#slips">Odds Slips</a>
-      <a class="nav-link" href="#performance">Performance</a>
+    <p class="sidebar-label">MAIN MENU</p>
+
+    <nav aria-label="Main navigation">
+      <a href="#dashboard" class="nav-link active" data-section="dashboard">
+        <span class="nav-icon">⌂</span>
+        <span>Dashboard</span>
+      </a>
+
+      <a href="#slips" class="nav-link" data-section="slips">
+        <span class="nav-icon">▤</span>
+        <span>Odds Slips</span>
+      </a>
+
+      <a href="#team-picks" class="nav-link" data-section="team-picks">
+        <span class="nav-icon">⚽</span>
+        <span>Team Predictions</span>
+      </a>
+
+      <a href="#goals" class="nav-link" data-section="goals">
+        <span class="nav-icon">◎</span>
+        <span>Over / Under Goals</span>
+      </a>
+
+      <a href="#fixtures" class="nav-link" data-section="fixtures">
+        <span class="nav-icon">▦</span>
+        <span>Today's Fixtures</span>
+      </a>
+
+      <a href="#performance" class="nav-link" data-section="performance">
+        <span class="nav-icon">↗</span>
+        <span>Performance</span>
+      </a>
     </nav>
 
     <div class="sidebar-bottom">
-      <span class="online-dot"></span>
-      Football Insights
-      <p>Bet responsibly. No prediction guarantees a win.</p>
+      <strong><span class="online-dot"></span>Football Analysis</strong>
+      <p>Data-driven predictions. No guaranteed wins. Always bet responsibly.</p>
+      <p class="version">BRAYTIPS · FOOTBALL INSIGHTS</p>
     </div>
   </aside>
 
-  <main class="main-content">
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="dashboard">
 
+    <!-- TOP BAR -->
     <header class="topbar">
-      <button id="menu-toggle" aria-label="Toggle navigation">☰</button>
+      <div class="topbar-left">
+        <button id="menu-toggle" type="button" aria-label="Open navigation"
+          aria-controls="sidebar" aria-expanded="false">☰</button>
 
-      <div>
-        <p class="eyebrow">FOOTBALL DASHBOARD</p>
-        <h1 id="page-title">Today's Overview</h1>
+        <div>
+          <p class="eyebrow">FOOTBALL ANALYTICS</p>
+          <h1>Dashboard</h1>
+        </div>
       </div>
 
       <div class="topbar-right">
-        <span id="connection-status" class="connection-badge">
-          Connecting to BrayTips...
+        <span id="current-date">Loading date...</span>
+        <span class="connection-badge" id="connection-status">
+          Connecting...
         </span>
-        <span id="current-date">—</span>
       </div>
     </header>
 
-    <section class="hero" id="overview">
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="hero-title">
       <div>
         <p class="eyebrow hero-eyebrow">WELCOME TO BRAYTIPS</p>
-        <h2>Smart analysis.<br><span>Better decisions.</span></h2>
+        <h2 id="hero-title">SMART BETS.<br><span>BETTER ODDS.</span></h2>
         <p>
-          Football fixtures, match analysis and transparent performance
-          tracking in one place.
+          Football predictions supported by match data, team form and
+          statistical analysis. Review every selection before placing a bet.
         </p>
       </div>
 
       <div class="hero-badge">
-        <div class="hero-logo">BT</div>
-        <div>
-          <strong>BrayTips</strong>
-          <small>Kenya time · EAT</small>
-        </div>
+        <span class="hero-logo">B</span>
+        <span>
+          <strong>BrayTips Analysis</strong>
+          <small>Football insights, updated when data is available</small>
+        </span>
       </div>
     </section>
 
-    <section class="stats-grid">
+    <!-- OVERVIEW -->
+    <section class="stats-grid" aria-label="Prediction overview">
       <article class="stat-card">
-        <span>Fixtures Loaded</span>
-        <strong id="fixtures-count">0</strong>
-        <small>Saved in the database</small>
+        <span>Today's Fixtures</span>
+        <strong id="stat-fixtures">—</strong>
+        <small>Matches available in the database</small>
       </article>
 
       <article class="stat-card">
-        <span>Published Predictions</span>
-        <strong id="predictions-count">0</strong>
-        <small>Available selections</small>
+        <span>Today's Predictions</span>
+        <strong id="stat-predictions">—</strong>
+        <small>Published selections</small>
       </article>
 
       <article class="stat-card">
-        <span>Settled Predictions</span>
-        <strong id="settled-count">0</strong>
+        <span>Pending Selections</span>
+        <strong id="stat-pending">—</strong>
+        <small>Awaiting final results</small>
+      </article>
+
+      <article class="stat-card">
+        <span>Settled Selections</span>
+        <strong id="stat-settled">—</strong>
         <small>Won or lost</small>
-      </article>
-
-      <article class="stat-card">
-        <span>Prediction Accuracy</span>
-        <strong id="accuracy-count">0%</strong>
-        <small>Settled predictions only</small>
       </article>
     </section>
 
+    <!-- DAILY ODDS SLIPS -->
+    <section class="section" id="slips">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">DAILY COMBINATIONS</p>
+          <h2>Today's Odds Slips</h2>
+        </div>
+        <span class="section-note">Combined odds are calculated from individual selections.</span>
+      </div>
+
+      <div class="slips-grid" id="slips-container">
+        <article class="slip-card">
+          <div class="slip-top">
+            <strong>2.00</strong>
+            <span>LOWER TARGET</span>
+          </div>
+          <h3>2.00 Odds Slip</h3>
+          <p>Loading published selections...</p>
+        </article>
+
+        <article class="slip-card">
+          <div class="slip-top">
+            <strong>5.00</strong>
+            <span>MID TARGET</span>
+          </div>
+          <h3>5.00 Odds Slip</h3>
+          <p>Loading published selections...</p>
+        </article>
+
+        <article class="slip-card">
+          <div class="slip-top">
+            <strong>10.00</strong>
+            <span>HIGH TARGET</span>
+          </div>
+          <h3>10.00 Odds Slip</h3>
+          <p>Loading published selections...</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- TEAM PICKS -->
+    <section class="section" id="team-picks">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">MATCH WINNER MARKETS</p>
+          <h2>Team Predictions</h2>
+        </div>
+        <span class="section-note">Three standalone picks when supported by the data.</span>
+      </div>
+
+      <div class="fixtures-grid" id="team-picks-container">
+        <article class="empty-card">
+          <div class="empty">Loading team predictions...</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- GOALS -->
+    <section class="section" id="goals">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">GOALS MARKETS</p>
+          <h2>Over / Under Goals</h2>
+        </div>
+        <span class="section-note">Selections depend on available match information.</span>
+      </div>
+
+      <div class="fixtures-grid" id="goals-container">
+        <article class="empty-card">
+          <div class="empty">Loading goals predictions...</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- FIXTURES -->
     <section class="section" id="fixtures">
       <div class="section-heading">
         <div>
           <p class="eyebrow">MATCH CENTRE</p>
-          <h2>Fixtures</h2>
+          <h2>Today's Fixtures</h2>
         </div>
-        <span class="section-note" id="fixtures-note">Loading fixtures...</span>
+        <span class="section-note">Kickoff times shown in East Africa Time.</span>
       </div>
 
-      <div class="fixtures-grid" id="fixtures-list">
-        <div class="empty-card">Connecting to the fixtures database...</div>
-      </div>
-    </section>
-
-    <section class="section" id="team-picks">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">MATCH ANALYSIS</p>
-          <h2>Standalone Team Picks</h2>
-        </div>
-        <span class="section-note">Published predictions only</span>
-      </div>
-
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Match</th>
-              <th>League</th>
-              <th>Selection</th>
-              <th>Odds</th>
-              <th>Probability</th>
-              <th>Analysis</th>
-              <th>Result</th>
-            </tr>
-          </thead>
-          <tbody id="team-picks-table">
-            <tr><td colspan="7" class="empty">Loading predictions...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="section" id="goals">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">GOAL MARKETS</p>
-          <h2>Over / Under Goals</h2>
-        </div>
-        <span class="section-note">Verified saved selections</span>
-      </div>
-
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Match</th>
-              <th>Market</th>
-              <th>Odds</th>
-              <th>Probability</th>
-              <th>Analysis</th>
-            </tr>
-          </thead>
-          <tbody id="goals-table">
-            <tr><td colspan="5" class="empty">Loading goal markets...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="section" id="slips">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">COMBINED ODDS</p>
-          <h2>Daily Odds Slips</h2>
-        </div>
-        <span class="section-note">Combined odds multiply together</span>
-      </div>
-
-      <div class="slips-grid">
-
-        <article class="slip-card" id="slip-2">
-          <div class="slip-top">
-            <strong>2.00</strong>
-            <span>TARGET ODDS</span>
-          </div>
-          <h3>Conservative Slip</h3>
-          <p>No published slip available yet.</p>
+      <div class="fixtures-grid" id="fixtures-container">
+        <article class="empty-card">
+          <div class="empty">Loading fixtures...</div>
         </article>
-
-        <article class="slip-card" id="slip-5">
-          <div class="slip-top">
-            <strong>5.00</strong>
-            <span>TARGET ODDS</span>
-          </div>
-          <h3>Medium Odds Slip</h3>
-          <p>No published slip available yet.</p>
-        </article>
-
-        <article class="slip-card" id="slip-10">
-          <div class="slip-top">
-            <strong>10.00</strong>
-            <span>TARGET ODDS</span>
-          </div>
-          <h3>High Odds Slip</h3>
-          <p>No published slip available yet.</p>
-        </article>
-
       </div>
     </section>
 
+    <!-- PERFORMANCE -->
     <section class="section" id="performance">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">RECENT TRACK RECORD</p>
-          <h2>Performance</h2>
+          <p class="eyebrow">RECENT RESULTS</p>
+          <h2>Performance Tracker</h2>
         </div>
-        <span class="section-note">Previous two days only</span>
+        <span class="section-note">Recent two days only.</span>
       </div>
 
       <div class="performance-grid">
         <article class="performance-card">
+          <span>Selections Settled</span>
+          <strong id="performance-settled">—</strong>
+        </article>
+
+        <article class="performance-card">
           <span>Won</span>
-          <strong id="won-count">0</strong>
+          <strong id="performance-won">—</strong>
         </article>
 
         <article class="performance-card">
           <span>Lost</span>
-          <strong id="lost-count">0</strong>
+          <strong id="performance-lost">—</strong>
         </article>
 
         <article class="performance-card">
-          <span>Settled</span>
-          <strong id="recent-settled-count">0</strong>
-        </article>
-
-        <article class="performance-card">
-          <span>Last Updated</span>
-          <strong id="last-updated">—</strong>
+          <span>Win Rate</span>
+          <strong id="performance-rate">—</strong>
         </article>
       </div>
 
@@ -247,32 +268,35 @@
           <thead>
             <tr>
               <th>Date</th>
-              <th>Match / Slip</th>
+              <th>Match</th>
+              <th>Market</th>
               <th>Selection</th>
               <th>Odds</th>
               <th>Result</th>
             </tr>
           </thead>
-          <tbody id="history-table">
-            <tr><td colspan="5" class="empty">Loading recent performance...</td></tr>
+          <tbody id="performance-table">
+            <tr>
+              <td colspan="6" class="empty">Loading recent performance...</td>
+            </tr>
           </tbody>
         </table>
       </div>
     </section>
 
+    <!-- FOOTER -->
     <footer>
       <div>
         <strong>BrayTips</strong>
         <span>SMART BETS. BETTER ODDS.</span>
       </div>
       <p>
-        For information only. Football outcomes are uncertain.
-        Please bet responsibly.
+        Predictions are estimates, not guarantees. Football betting involves
+        financial risk. Only bet what you can afford to lose.
       </p>
     </footer>
 
   </main>
-
 </body>
 </html>
 ```
