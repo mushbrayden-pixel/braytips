@@ -101,18 +101,16 @@
         </div>
       </section>
 
-      <div class="notice" role="status">
-        <span class="notice-icon">ⓘ</span>
-        <div>
-          <strong>Data connection not configured yet.</strong>
-          <span>
-            This is the initial dashboard. Live fixtures, bookmaker odds and
-            automated predictions will appear after we connect the backend and
-            a verified data provider. No fictional selections are being displayed.
-          </span>
-        </div>
-      </div>
-
+<div class="notice" id="connection-notice" role="status">
+  <span class="notice-icon">ⓘ</span>
+  <div>
+    <strong id="connection-notice-title">Connecting to football data...</strong>
+    <span id="connection-notice-message">
+      Checking the connection to the BrayTips data service.
+    </span>
+  </div>
+</div>
+      
       <section class="section" id="odds-slips">
         <div class="section-heading">
           <div>
