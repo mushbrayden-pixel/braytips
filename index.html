@@ -1,0 +1,393 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#08111f">
+  <meta name="description" content="BrayTips football analytics, match predictions, odds analysis and performance tracking.">
+  <title>BrayTips | Football Intelligence</title>
+
+  <!-- IMPORTANT: These filenames must match your actual files -->
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+
+<body>
+  <header class="app-header">
+    <a href="#home" class="brand" aria-label="BrayTips home">
+      <div class="brand-mark">B↗</div>
+      <div>
+        <div class="brand-name">BRAY<span>TIPS</span></div>
+        <div class="brand-tagline">SMART BETS. BETTER ODDS.</div>
+      </div>
+    </a>
+
+    <div class="header-right">
+      <div class="live-indicator">
+        <span class="live-dot"></span>
+        <span>Analytics dashboard</span>
+      </div>
+      <div class="header-date" id="header-date">Loading date...</div>
+      <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-label">Workspace</div>
+
+      <nav aria-label="Main navigation">
+        <a href="#home" class="nav-link active">
+          <span class="nav-icon">⌂</span> Dashboard
+        </a>
+        <a href="#odds-slips" class="nav-link">
+          <span class="nav-icon">◈</span> Odds Slips
+        </a>
+        <a href="#winner-teams" class="nav-link">
+          <span class="nav-icon">🏆</span> Winner Teams
+        </a>
+        <a href="#over-under" class="nav-link">
+          <span class="nav-icon">⚽</span> Over / Under
+        </a>
+      </nav>
+
+      <div class="sidebar-label">Analytics</div>
+
+      <nav aria-label="Analytics navigation">
+        <a href="#performance" class="nav-link">
+          <span class="nav-icon">▥</span> Performance
+        </a>
+        <a href="#history" class="nav-link">
+          <span class="nav-icon">◷</span> Previous 2 Days
+        </a>
+        <a href="#method" class="nav-link">
+          <span class="nav-icon">◎</span> Our Method
+        </a>
+      </nav>
+
+      <div class="sidebar-note">
+        <span class="note-icon">✦</span>
+        <strong>Data-driven predictions</strong>
+        <p>Our goal is to evaluate fixtures using real match statistics, available odds and probability estimates—not guesses.</p>
+      </div>
+    </aside>
+
+    <main class="main-content" id="home">
+      <section class="page-heading">
+        <div>
+          <div class="eyebrow">Football intelligence platform</div>
+          <h1>Your Daily Dashboard</h1>
+          <p>Explore football predictions, compare odds and track settled results in one place.</p>
+        </div>
+        <div class="heading-date" id="dashboard-date">Kenya time · Loading...</div>
+      </section>
+
+      <section class="hero">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span>✦</span> THE BRAYTIPS EDGE
+          </div>
+          <h2>Make smarter decisions.<br><span>Follow the data.</span></h2>
+          <p>
+            Analyse team form, head-to-head records, league standings and
+            available match statistics. Every selection should have a reason.
+            No outcome is guaranteed.
+          </p>
+          <div class="hero-bottom">
+            <a href="#odds-slips" class="primary-button">Explore odds slips <span>→</span></a>
+            <a href="#method" class="secondary-button">How it works</a>
+          </div>
+        </div>
+      </section>
+
+      <div class="notice" role="status">
+        <span class="notice-icon">ⓘ</span>
+        <div>
+          <strong>Data connection not configured yet.</strong>
+          <span>
+            This is the initial dashboard. Live fixtures, bookmaker odds and
+            automated predictions will appear after we connect the backend and
+            a verified data provider. No fictional selections are being displayed.
+          </span>
+        </div>
+      </div>
+
+      <section class="section" id="odds-slips">
+        <div class="section-heading">
+          <div>
+            <h2>Today's Odds Slips</h2>
+            <p>Target combined decimal odds for different risk levels.</p>
+          </div>
+          <span class="status-pill yellow">Awaiting live data</span>
+        </div>
+
+        <div class="slip-grid">
+          <article class="slip-card">
+            <div class="slip-top">
+              <span class="slip-label">CONSERVATIVE TARGET</span>
+              <span class="slip-icon">◈</span>
+            </div>
+            <div class="slip-odds">2.00 <small>odds</small></div>
+            <div class="slip-footer">
+              <span>Lower target</span>
+              <span class="status-pill">Not generated</span>
+            </div>
+          </article>
+
+          <article class="slip-card">
+            <div class="slip-top">
+              <span class="slip-label">MEDIUM TARGET</span>
+              <span class="slip-icon">↗</span>
+            </div>
+            <div class="slip-odds">5.00 <small>odds</small></div>
+            <div class="slip-footer">
+              <span>More combined risk</span>
+              <span class="status-pill">Not generated</span>
+            </div>
+          </article>
+
+          <article class="slip-card">
+            <div class="slip-top">
+              <span class="slip-label">HIGH TARGET</span>
+              <span class="slip-icon">✦</span>
+            </div>
+            <div class="slip-odds">10.00 <small>odds</small></div>
+            <div class="slip-footer">
+              <span>Higher variance</span>
+              <span class="status-pill">Not generated</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="winner-teams">
+        <div class="section-heading">
+          <div>
+            <h2>Daily Winner Teams</h2>
+            <p>Up to three standalone team-win selections, when supported by the data.</p>
+          </div>
+        </div>
+
+        <div class="quick-grid">
+          <article class="feature-card">
+            <div class="feature-icon">🏆</div>
+            <div>
+              <h3>Standalone Pick 01</h3>
+              <p>Waiting for verified fixtures and team analysis.</p>
+            </div>
+            <span class="feature-arrow">→</span>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">⚽</div>
+            <div>
+              <h3>Standalone Pick 02 & 03</h3>
+              <p>Selections will only be shown when the available evidence supports them.</p>
+            </div>
+            <span class="feature-arrow">→</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="over-under">
+        <div class="section-heading">
+          <div>
+            <h2>Over / Under Goals</h2>
+            <p>Goal-market analysis based on team scoring, conceding and match data.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Goals Market Predictions</h3>
+              <p>Over 1.5 · Over 2.5 · Under 2.5 · Other supported markets</p>
+            </div>
+            <span class="status-pill">Awaiting data</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fixture</th>
+                  <th>Market</th>
+                  <th>Odds</th>
+                  <th>Probability</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody id="over-under-table">
+                <tr>
+                  <td colspan="5" class="empty-state">
+                    <strong>No verified goal-market predictions yet</strong>
+                    <span>Connect the football data provider to populate this table with real fixtures and available odds.</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="predictions">
+        <div class="section-heading">
+          <div>
+            <h2>Today's Match Analysis</h2>
+            <p>Fixtures, selected markets, odds and model probability estimates.</p>
+          </div>
+          <span class="status-pill">Data pending</span>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Prediction Board</h3>
+              <p>Only verified data should be published here.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fixture</th>
+                  <th>Competition</th>
+                  <th>Selection</th>
+                  <th>Odds</th>
+                  <th>Probability</th>
+                  <th>Analysis</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="predictions-table">
+                <tr>
+                  <td colspan="7" class="empty-state">
+                    <strong>Predictions will appear here</strong>
+                    <span>The backend and verified football data feed have not been connected yet.</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="performance">
+        <div class="section-heading">
+          <div>
+            <h2>Performance Overview</h2>
+            <p>Settled prediction results—not projected outcomes.</p>
+          </div>
+          <span class="status-pill">Last 2 days</span>
+        </div>
+
+        <div class="performance-grid">
+          <article class="stat-card">
+            <div class="stat-label">Settled Predictions</div>
+            <div class="stat-value" id="settled-count">0</div>
+            <div class="stat-caption">Wins and losses counted</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-label">Won</div>
+            <div class="stat-value" id="won-count">0</div>
+            <div class="stat-caption">Correct settled outcomes</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-label">Lost</div>
+            <div class="stat-value" id="lost-count">0</div>
+            <div class="stat-caption">Incorrect settled outcomes</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-label">Accuracy</div>
+            <div class="stat-value" id="accuracy-count">0%</div>
+            <div class="stat-caption">Wins ÷ settled predictions</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="history">
+        <div class="section-heading">
+          <div>
+            <h2>Previous 2 Days</h2>
+            <p>Recent prediction history and verified final outcomes.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Recent Results</h3>
+              <p>Only the previous two days of history are displayed here.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Fixture</th>
+                  <th>Selection</th>
+                  <th>Odds at publication</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody id="history-table">
+                <tr>
+                  <td colspan="5" class="empty-state">
+                    <strong>No recorded results yet</strong>
+                    <span>Historical performance will appear after predictions have been published and matches settled.</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="method">
+        <div class="section-heading">
+          <div>
+            <h2>How BrayTips Works</h2>
+            <p>A transparent approach to evaluating football markets.</p>
+          </div>
+        </div>
+
+        <div class="method-grid">
+          <article class="method-card">
+            <div class="method-number">01</div>
+            <h3>Collect verified data</h3>
+            <p>Retrieve fixtures, recent form, head-to-head results, league positions and available match statistics from configured data sources.</p>
+          </article>
+
+          <article class="method-card">
+            <div class="method-number">02</div>
+            <h3>Evaluate probabilities</h3>
+            <p>Estimate outcomes from the available evidence, compare them with bookmaker odds and explain the factors behind each selection.</p>
+          </article>
+
+          <article class="method-card">
+            <div class="method-number">03</div>
+            <h3>Track every result</h3>
+            <p>Save predictions and publication-time odds, record final outcomes, and calculate accuracy using settled wins and losses.</p>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div>
+          <strong>BRAYTIPS</strong><br>
+          Smart bets. Better odds.
+        </div>
+        <div class="disclaimer">
+          Football predictions are uncertain and betting can result in financial loss.
+          No selection is guaranteed. Only bet what you can afford to lose.
+        </div>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
+```
