@@ -139,7 +139,7 @@
       return "—";
     }
 
-    return `${percentage.toFixed(1)}%`;
+    return String(percentage.toFixed(1)) + "%";
   }
 
   function getResultClass(result) {
