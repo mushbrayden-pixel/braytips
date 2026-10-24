@@ -4,23 +4,186 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10233f">
-  <meta name="description" content="BrayTips football fixtures, form and evidence-led predictions.">
+  <meta name="description" content="BrayTips football fixtures, form, predictions and performance tracking.">
   <title>BrayTips | Football Insights</title>
   <link rel="stylesheet" href="styles.css">
   <script defer src="app.js"></script>
+
+  <style>
+    /* BrayTips Performance Tracker */
+    #performance {
+      scroll-margin-top: 90px;
+    }
+
+    #performance .performance-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    #performance .performance-card {
+      padding: 22px;
+      border: 1px solid #e1e8f0;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 4px 16px rgba(16, 35, 63, .045);
+      min-width: 0;
+    }
+
+    #performance .performance-label {
+      display: block;
+      font-size: 13px;
+      color: #65748b;
+      margin-bottom: 12px;
+    }
+
+    #performance .performance-value {
+      display: block;
+      color: #10233f;
+      font-size: clamp(24px, 3vw, 34px);
+      font-weight: 800;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    #performance .performance-detail {
+      display: block;
+      margin-top: 9px;
+      font-size: 12px;
+      color: #718096;
+    }
+
+    #performance .performance-panels {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    #performance .performance-panel {
+      padding: 24px;
+      border: 1px solid #e1e8f0;
+      border-radius: 16px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    #performance .performance-panel h3 {
+      color: #10233f;
+      font-size: 18px;
+      margin: 0 0 20px;
+    }
+
+    #performance .performance-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 13px 0;
+      border-bottom: 1px solid #edf1f6;
+    }
+
+    #performance .performance-row:last-child {
+      border-bottom: 0;
+    }
+
+    #performance .performance-row span {
+      color: #617087;
+      font-size: 14px;
+    }
+
+    #performance .performance-row strong {
+      color: #10233f;
+      font-size: 15px;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    #performance .performance-positive {
+      color: #16834a !important;
+    }
+
+    #performance .performance-negative {
+      color: #c03939 !important;
+    }
+
+    #performance .performance-bar-track {
+      width: 100%;
+      height: 9px;
+      border-radius: 99px;
+      background: #e9eef5;
+      overflow: hidden;
+      margin: 12px 0 8px;
+    }
+
+    #performance .performance-bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: 99px;
+      background: #246bfd;
+      transition: width .35s ease;
+    }
+
+    #performance .performance-message {
+      padding: 16px;
+      border-radius: 12px;
+      background: #f3f7ff;
+      color: #43536b;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-top: 20px;
+    }
+
+    #performance .performance-refresh {
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    #performance .performance-updated {
+      font-size: 12px;
+      color: #718096;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 800px) {
+      #performance .performance-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      #performance .performance-panels {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 380px) {
+      #performance .performance-card {
+        padding: 15px;
+      }
+
+      #performance .performance-panel {
+        padding: 17px;
+      }
+    }
+  </style>
 </head>
+
 <body>
   <header class="site-header">
     <a class="brand" href="#" aria-label="BrayTips home">
       <span class="brand-mark">B</span>
       <span>Bray<span class="brand-accent">Tips</span><small>FOOTBALL INSIGHTS</small></span>
     </a>
+
     <nav class="top-nav" aria-label="Main navigation">
       <a href="#fixtures">Fixtures</a>
       <a href="#predictions">Predictions</a>
       <a href="#slips">Slips</a>
+      <a href="#performance">Performance</a>
     </nav>
-    <button id="refreshButton" class="button button-outline" type="button">Refresh data</button>
+
+    <button id="refreshButton" class="button button-outline" type="button">
+      Refresh data
+    </button>
   </header>
 
   <main>
@@ -28,71 +191,442 @@
       <div class="hero-copy">
         <p class="eyebrow">FOOTBALL DATA • FORM • DISCIPLINE</p>
         <h1>Make decisions with<br><span>better information.</span></h1>
-        <p class="hero-description">Upcoming fixtures, verified team information and published predictions in one place.</p>
+        <p class="hero-description">
+          Upcoming fixtures, verified team information and published predictions in one place.
+        </p>
+
         <div class="hero-actions">
           <a class="button button-primary" href="#fixtures">Explore fixtures</a>
-          <a class="button button-quiet" href="#predictions">View predictions <span aria-hidden="true">→</span></a>
+          <a class="button button-quiet" href="#predictions">
+            View predictions <span aria-hidden="true">→</span>
+          </a>
         </div>
       </div>
+
       <div class="hero-panel">
-        <div class="panel-top"><span class="live-dot"></span> SYSTEM STATUS <span id="statusLabel" class="status-pill">Connecting…</span></div>
-        <div class="hero-stat-grid">
-          <div><strong id="fixtureCount">—</strong><span>Fixtures loaded</span></div>
-          <div><strong id="predictionCount">—</strong><span>Published picks</span></div>
-          <div><strong id="slipCount">—</strong><span>Published slips</span></div>
+        <div class="panel-top">
+          <span class="live-dot"></span>
+          SYSTEM STATUS
+          <span id="statusLabel" class="status-pill">Connecting…</span>
         </div>
+
+        <div class="hero-stat-grid">
+          <div>
+            <strong id="fixtureCount">—</strong>
+            <span>Fixtures loaded</span>
+          </div>
+          <div>
+            <strong id="predictionCount">—</strong>
+            <span>Published picks</span>
+          </div>
+          <div>
+            <strong id="slipCount">—</strong>
+            <span>Published slips</span>
+          </div>
+        </div>
+
         <p id="lastUpdated" class="muted small">Connecting to BrayTips API…</p>
       </div>
     </section>
 
     <section class="notice" id="notice" role="status" aria-live="polite">
       <span class="notice-icon">i</span>
-      <span>Predictions appear here only when they have been published. No picks or odds are invented.</span>
+      <span>
+        Predictions appear here only when they have been published. No picks or odds are invented.
+      </span>
     </section>
 
+    <!-- FIXTURES -->
     <section class="section" id="fixtures">
       <div class="section-heading">
-        <div><p class="eyebrow">THE MATCH LIST</p><h2>Upcoming fixtures</h2><p class="section-subtitle">Times are shown in East Africa Time (EAT).</p></div>
+        <div>
+          <p class="eyebrow">THE MATCH LIST</p>
+          <h2>Upcoming fixtures</h2>
+          <p class="section-subtitle">Times are shown in East Africa Time (EAT).</p>
+        </div>
+
         <div class="filters">
           <label class="sr-only" for="leagueFilter">Filter by competition</label>
-          <select id="leagueFilter"><option value="">All competitions</option></select>
+          <select id="leagueFilter">
+            <option value="">All competitions</option>
+          </select>
+
           <label class="sr-only" for="fixtureSearch">Search teams</label>
           <input id="fixtureSearch" type="search" placeholder="Search teams…">
         </div>
       </div>
+
       <div id="fixturesContainer" class="fixture-grid">
         <div class="empty-state">Loading fixtures…</div>
       </div>
     </section>
 
+    <!-- PREDICTIONS -->
     <section class="section" id="predictions">
       <div class="section-heading">
-        <div><p class="eyebrow">PUBLISHED ANALYSIS</p><h2>Predictions</h2><p class="section-subtitle">Only database-published selections are displayed.</p></div>
+        <div>
+          <p class="eyebrow">PUBLISHED ANALYSIS</p>
+          <h2>Predictions</h2>
+          <p class="section-subtitle">
+            Only database-published selections are displayed.
+          </p>
+        </div>
       </div>
+
       <div id="predictionsContainer" class="content-grid">
         <div class="empty-state">Loading predictions…</div>
       </div>
     </section>
 
+    <!-- SLIPS -->
     <section class="section" id="slips">
       <div class="section-heading">
-        <div><p class="eyebrow">COMBINATION TRACKER</p><h2>Published slips</h2><p class="section-subtitle">Historical slip status and recorded combined odds.</p></div>
+        <div>
+          <p class="eyebrow">COMBINATION TRACKER</p>
+          <h2>Published slips</h2>
+          <p class="section-subtitle">
+            Historical slip status and recorded combined odds.
+          </p>
+        </div>
       </div>
+
       <div id="slipsContainer" class="content-grid">
         <div class="empty-state">Loading slips…</div>
       </div>
     </section>
 
+    <!-- NEW PERFORMANCE TRACKER -->
+    <section class="section" id="performance">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">RESULTS • RECORDS • ACCOUNTABILITY</p>
+          <h2>Performance tracker</h2>
+          <p class="section-subtitle">
+            Track recorded prediction results and historical performance.
+          </p>
+        </div>
+
+        <button
+          id="performanceRefreshButton"
+          class="button button-outline performance-refresh"
+          type="button"
+        >
+          Refresh performance
+        </button>
+      </div>
+
+      <div id="performanceLoading" class="empty-state" role="status" aria-live="polite">
+        Loading performance statistics…
+      </div>
+
+      <div id="performanceContent" hidden>
+        <div class="performance-summary">
+          <article class="performance-card">
+            <span class="performance-label">Total predictions</span>
+            <strong id="perfTotal" class="performance-value">0</strong>
+            <span class="performance-detail">All recorded predictions</span>
+          </article>
+
+          <article class="performance-card">
+            <span class="performance-label">Settled wins</span>
+            <strong id="perfWins" class="performance-value">0</strong>
+            <span id="perfWinsDetail" class="performance-detail">Awaiting results</span>
+          </article>
+
+          <article class="performance-card">
+            <span class="performance-label">Win rate</span>
+            <strong id="perfWinRate" class="performance-value">0%</strong>
+            <div class="performance-bar-track" aria-hidden="true">
+              <div id="perfWinRateBar" class="performance-bar-fill"></div>
+            </div>
+            <span class="performance-detail">Based on settled predictions</span>
+          </article>
+
+          <article class="performance-card">
+            <span class="performance-label">Profit / loss</span>
+            <strong id="perfProfit" class="performance-value">0 units</strong>
+            <span id="perfProfitDetail" class="performance-detail">
+              Based on recorded odds
+            </span>
+          </article>
+        </div>
+
+        <div class="performance-panels">
+          <article class="performance-panel">
+            <h3>Prediction results</h3>
+
+            <div class="performance-row">
+              <span>Won</span>
+              <strong id="perfWonRow">0</strong>
+            </div>
+
+            <div class="performance-row">
+              <span>Lost</span>
+              <strong id="perfLostRow">0</strong>
+            </div>
+
+            <div class="performance-row">
+              <span>Pending</span>
+              <strong id="perfPendingRow">0</strong>
+            </div>
+
+            <div class="performance-row">
+              <span>Void</span>
+              <strong id="perfVoidRow">0</strong>
+            </div>
+
+            <div class="performance-row">
+              <span>Settled predictions</span>
+              <strong id="perfSettledRow">0</strong>
+            </div>
+
+            <div class="performance-row">
+              <span>Predictions with recorded odds</span>
+              <strong id="perfOddsRow">0</strong>
+            </div>
+          </article>
+
+          <article class="performance-panel">
+            <h3>Slip performance</h3>
+
+            <div class="performance-row">
+              <span>Total slips</span>
+              <strong id="perfSlipsTotal">0</strong>
+            </div>
+
+            <div class="performance-row">
+              <span>Won</span>
+              <strong id="perfSlipsWon">0</strong>
+            </div>
+
+            <div class="performance-row">
+              <span>Lost</span>
+              <strong id="perfSlipsLost">0</strong>
+            </div>
+
+            <div class="performance-row">
+              <span>Pending</span>
+              <strong id="perfSlipsPending">0</strong>
+            </div>
+
+            <div class="performance-row">
+              <span>Void</span>
+              <strong id="perfSlipsVoid">0</strong>
+            </div>
+
+            <div class="performance-row">
+              <span>Settled slip win rate</span>
+              <strong id="perfSlipsRate">0%</strong>
+            </div>
+
+            <div class="performance-message">
+              <strong>How to read these numbers</strong><br>
+              Pending selections are not counted as wins or losses. Profit calculations
+              use one unit per prediction and require recorded decimal odds. Slip profit
+              is not calculated in this tracker.
+            </div>
+          </article>
+        </div>
+
+        <p id="performanceUpdated" class="performance-updated">
+          Waiting for performance data…
+        </p>
+      </div>
+
+      <div id="performanceError" class="empty-state" hidden role="alert">
+        Performance statistics could not be loaded.
+      </div>
+    </section>
+
+    <!-- RESPONSIBLE BETTING -->
     <section class="disclaimer">
       <strong>Responsible betting</strong>
-      <p>Football outcomes are uncertain. Statistics and historical form do not guarantee results. Never stake money you cannot afford to lose, and follow local laws and age restrictions.</p>
+      <p>
+        Football outcomes are uncertain. Statistics and historical form do not guarantee
+        results. Never stake money you cannot afford to lose, and follow local laws and
+        age restrictions.
+      </p>
     </section>
   </main>
 
   <footer class="site-footer">
-    <a class="brand brand-footer" href="#"><span class="brand-mark">B</span><span>Bray<span class="brand-accent">Tips</span></span></a>
+    <a class="brand brand-footer" href="#">
+      <span class="brand-mark">B</span>
+      <span>Bray<span class="brand-accent">Tips</span></span>
+    </a>
+
     <span>Football insights, with data integrity first.</span>
     <span id="footerApiStatus">API status: checking</span>
   </footer>
+
+  <!-- Performance API connection -->
+  <script>
+    (function () {
+      "use strict";
+
+      const API_BASE = "https://braytips-api.mushbrayden.workers.dev";
+
+      const $ = (id) => document.getElementById(id);
+
+      function setText(id, value) {
+        const element = $(id);
+        if (element) element.textContent = value;
+      }
+
+      function number(value) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+
+      function showError(message) {
+        $("performanceLoading").hidden = true;
+        $("performanceContent").hidden = true;
+        $("performanceError").hidden = false;
+        $("performanceError").textContent = message;
+      }
+
+      function formatUpdated(dateString) {
+        const date = new Date(dateString);
+
+        if (Number.isNaN(date.getTime())) {
+          return "Updated just now";
+        }
+
+        return "Last updated: " + date.toLocaleString("en-KE", {
+          timeZone: "Africa/Nairobi",
+          dateStyle: "medium",
+          timeStyle: "short"
+        }) + " EAT";
+      }
+
+      function displayProfit(value) {
+        const amount = number(value);
+        const sign = amount > 0 ? "+" : "";
+        return sign + amount.toFixed(2) + " units";
+      }
+
+      async function loadPerformance() {
+        const refreshButton = $("performanceRefreshButton");
+
+        refreshButton.disabled = true;
+        refreshButton.textContent = "Refreshing…";
+
+        $("performanceError").hidden = true;
+
+        if ($("performanceContent").hidden) {
+          $("performanceLoading").hidden = false;
+          $("performanceLoading").textContent =
+            "Loading performance statistics…";
+        }
+
+        try {
+          const response = await fetch(API_BASE + "/api/performance", {
+            method: "GET",
+            headers: { "Accept": "application/json" },
+            cache: "no-store"
+          });
+
+          if (!response.ok) {
+            throw new Error("Performance API returned HTTP " + response.status);
+          }
+
+          const data = await response.json();
+
+          if (data.success !== true || !data.performance) {
+            throw new Error("The performance API returned an unexpected response.");
+          }
+
+          const performance = data.performance;
+          const predictions = performance.predictions || {};
+          const slips = performance.slips || {};
+
+          const total = number(predictions.total);
+          const won = number(predictions.won);
+          const lost = number(predictions.lost);
+          const pending = number(predictions.pending);
+          const voided = number(predictions.void);
+          const settled = number(
+            predictions.settled !== undefined
+              ? predictions.settled
+              : won + lost
+          );
+
+          const winRate = number(predictions.winRatePercent);
+          const profit = number(predictions.profitUnits);
+          const withOdds = number(predictions.predictionsWithOdds);
+
+          const slipsTotal = number(slips.total);
+          const slipsWon = number(slips.won);
+          const slipsLost = number(slips.lost);
+          const slipsPending = number(slips.pending);
+          const slipsVoid = number(slips.void);
+          const slipsRate = number(slips.winRatePercent);
+
+          setText("perfTotal", total);
+          setText("perfWins", won);
+          setText("perfWinsDetail", won + " wins recorded");
+          setText("perfWinRate", winRate.toFixed(1) + "%");
+
+          $("perfWinRateBar").style.width =
+            Math.max(0, Math.min(100, winRate)) + "%";
+
+          setText("perfProfit", displayProfit(profit));
+
+          $("perfProfit").classList.toggle("performance-positive", profit > 0);
+          $("perfProfit").classList.toggle("performance-negative", profit < 0);
+
+          setText("perfProfitDetail", withOdds + " predictions with odds");
+          setText("perfWonRow", won);
+          setText("perfLostRow", lost);
+          setText("perfPendingRow", pending);
+          setText("perfVoidRow", voided);
+          setText("perfSettledRow", settled);
+          setText("perfOddsRow", withOdds);
+
+          setText("perfSlipsTotal", slipsTotal);
+          setText("perfSlipsWon", slipsWon);
+          setText("perfSlipsLost", slipsLost);
+          setText("perfSlipsPending", slipsPending);
+          setText("perfSlipsVoid", slipsVoid);
+          setText("perfSlipsRate", slipsRate.toFixed(1) + "%");
+
+          setText(
+            "performanceUpdated",
+            formatUpdated(data.generatedAt || new Date().toISOString())
+          );
+
+          $("performanceLoading").hidden = true;
+          $("performanceError").hidden = true;
+          $("performanceContent").hidden = false;
+
+        } catch (error) {
+          console.error("BrayTips performance error:", error);
+
+          if ($("performanceContent").hidden) {
+            showError(
+              "Unable to load performance statistics. Please check your connection " +
+              "and try again. If the issue continues, the API may be unavailable."
+            );
+          } else {
+            $("performanceError").hidden = false;
+            $("performanceError").textContent =
+              "Refresh failed. Your last successfully loaded statistics remain visible.";
+          }
+
+          $("performanceLoading").hidden = true;
+
+        } finally {
+          refreshButton.disabled = false;
+          refreshButton.textContent = "Refresh performance";
+        }
+      }
+
+      $("performanceRefreshButton").addEventListener("click", loadPerformance);
+
+      // Load the tracker immediately and refresh it periodically.
+      loadPerformance();
+      window.setInterval(loadPerformance, 60000);
+    })();
+  </script>
 </body>
 </html>
