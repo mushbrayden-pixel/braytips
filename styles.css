@@ -38,18 +38,43 @@ button {
   font: inherit;
 }
 
+```css
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
-  z-index: 10;
+  z-index: 100;
   display: flex;
   flex-direction: column;
   width: 245px;
   padding: 28px 18px;
-  background: var(--navy);
-  color: white;
-  transition: transform .25s ease;
+  background-color: #10233f !important;
+  color: #ffffff !important;
+  transition: transform 0.25s ease;
 }
+
+.sidebar .brand,
+.sidebar nav,
+.sidebar .sidebar-bottom {
+  background-color: transparent;
+}
+
+.sidebar .brand strong,
+.sidebar .nav-link {
+  color: #ffffff;
+}
+
+.sidebar .brand small,
+.sidebar .sidebar-bottom,
+.sidebar .sidebar-bottom p {
+  color: #bdc9da;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  background-color: #ffffff15;
+  color: #ffffff;
+}
+```
 
 .brand {
   display: flex;
