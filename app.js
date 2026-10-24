@@ -1,594 +1,764 @@
 ```javascript
 "use strict";
 
-const BRAYTIPS_CONFIG = {
+/* ==========================================
+   BRAYTIPS CONFIGURATION
+   ========================================== */
+
+const CONFIG = {
   apiBase: "https://braytips-api.mushbrayden.workers.dev",
   timezone: "Africa/Nairobi",
-  refreshInterval: 5 * 60 * 1000
-};
-
-const dashboardState = {
-  matches: [],
-  predictions: [],
-  slips: [],
-  history: [],
-  lastUpdated: null
+  refreshIntervalMs: 5 * 60 * 1000,
+  performanceDays: 2
 };
 
 const $ = (selector) => document.querySelector(selector);
 
-function safeText(value) {
+const state = {
+  matches: [],
+  predictions: [],
+  slips: [],
+  lastUpdated: null,
+  loading: false
+};
+
+
+/* ==========================================
+   GENERAL HELPERS
+   ========================================== */
+
+function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
-    "'": "&#39;"
+    "'": "&#039;"
   })[character]);
 }
 
-function formatDateTime(value) {
-  if (!value) return "Time unavailable";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Time unavailable";
-  }
-
-  return new Intl.DateTimeFormat("en-KE", {
-    timeZone: BRAYTIPS_CONFIG.timezone,
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  }).format(date);
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
 }
 
 function formatOdds(value) {
-  if (value === null || value === undefined || value === "") {
-    return "—";
-  }
-
   const odds = Number(value);
-
   return Number.isFinite(odds) && odds > 1
     ? odds.toFixed(2)
-    : "—";
+    : "N/A";
 }
 
-function formatProbability(value) {
-  if (value === null || value === undefined || value === "") {
-    return "—";
-  }
+function formatDate(value, includeTime = false) {
+  if (!value) return "Date unavailable";
 
-  const probability = Number(value);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
 
-  if (!Number.isFinite(probability)) return "—";
-
-  const percentage =
-    probability >= 0 && probability <= 1
-      ? probability * 100
-      : probability;
-
-  return percentage >= 0 && percentage <= 100
-    ? `${percentage.toFixed(1)}%`
-    : "—";
-}
-
-function normalizeResult(value) {
-  const result = String(value || "pending").toLowerCase();
-
-  if (["won", "win"].includes(result)) return "won";
-  if (["lost", "loss"].includes(result)) return "lost";
-  if (result === "void") return "void";
-
-  return "pending";
-}
-
-function resultBadge(value) {
-  const result = normalizeResult(value);
-  const labels = {
-    won: "Won",
-    lost: "Lost",
-    void: "Void",
-    pending: "Pending"
+  const options = {
+    timeZone: CONFIG.timezone,
+    day: "numeric",
+    month: "short",
+    year: "numeric"
   };
 
-  return `<span class="result-badge result-${result}">
-    ${labels[result]}
-  </span>`;
+  if (includeTime) {
+    options.hour = "2-digit";
+    options.minute = "2-digit";
+    options.hour12 = false;
+  }
+
+  return new Intl.DateTimeFormat("en-GB", options).format(date);
 }
 
-function updateConnection(message, status = "") {
-  const element = $("#connection-status");
-
-  if (!element) return;
-
-  element.textContent = message;
-  element.className = `connection-badge ${status}`.trim();
-}
-
-function getKenyaDateKey(date = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: BRAYTIPS_CONFIG.timezone,
+function todayInNairobi() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: CONFIG.timezone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit"
-  }).formatToParts(date);
-
-  const values = {};
-
-  parts.forEach((part) => {
-    values[part.type] = part.value;
-  });
-
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
-function getPreviousDateKeys(count = 2) {
-  const today = getKenyaDateKey();
-  const [year, month, day] = today.split("-").map(Number);
-  const base = new Date(Date.UTC(year, month - 1, day));
-  const dates = [];
-
-  for (let i = 1; i <= count; i++) {
-    const date = new Date(base);
-    date.setUTCDate(date.getUTCDate() - i);
-    dates.push(date.toISOString().slice(0, 10));
-  }
-
-  return dates;
-}
-
-function updateDateDisplay() {
-  const formatted = new Intl.DateTimeFormat("en-KE", {
-    timeZone: BRAYTIPS_CONFIG.timezone,
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric"
   }).format(new Date());
-
-  const element = $("#current-date");
-
-  if (element) element.textContent = formatted;
 }
 
-function renderFixtures() {
-  const container = $("#fixtures-list");
-  const count = $("#fixtures-count");
-  const note = $("#fixtures-note");
+function dateKey(value) {
+  if (!value) return "";
 
-  if (!container) return;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
 
-  const fixtures = [...dashboardState.matches].sort((a, b) =>
-    String(a.kickoff_at || "").localeCompare(
-      String(b.kickoff_at || "")
-    )
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: CONFIG.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
+}
+
+function isToday(value) {
+  return dateKey(value) === todayInNairobi();
+}
+
+function isWithinRecentDays(value, days = CONFIG.performanceDays) {
+  const key = dateKey(value);
+  if (!key) return false;
+
+  const today = todayInNairobi();
+
+  const todayDate = new Date(`${today}T00:00:00+03:00`);
+  const itemDate = new Date(`${key}T00:00:00+03:00`);
+
+  const difference = Math.round(
+    (todayDate.getTime() - itemDate.getTime()) / 86400000
   );
 
-  if (count) count.textContent = String(fixtures.length);
-
-  if (note) {
-    note.textContent = `${fixtures.length} fixtures in database`;
-  }
-
-  if (!fixtures.length) {
-    container.innerHTML = `
-      <div class="empty-card">
-        <strong>No fixtures loaded</strong>
-        <p>
-          The database currently contains no fixtures. Run your
-          existing fixture import process before expecting matches here.
-        </p>
-      </div>`;
-    return;
-  }
-
-  container.innerHTML = fixtures.slice(0, 18).map((match) => {
-    const status = String(match.match_status || "upcoming").toLowerCase();
-
-    const statusLabels = {
-      upcoming: "Upcoming",
-      live: "Live",
-      finished: "Finished",
-      postponed: "Postponed",
-      cancelled: "Cancelled"
-    };
-
-    const hasScore =
-      match.home_goals !== null &&
-      match.home_goals !== undefined &&
-      match.away_goals !== null &&
-      match.away_goals !== undefined;
-
-    const scoreHTML = hasScore
-      ? `<div class="fixture-time">
-           Score: ${safeText(match.home_goals)} – ${safeText(match.away_goals)}
-         </div>`
-      : "";
-
-    return `
-      <article class="fixture-card">
-        <div class="fixture-league">
-          ${safeText(match.league_name || "Competition")}
-          ${match.country ? ` · ${safeText(match.country)}` : ""}
-        </div>
-
-        <div class="fixture-teams">
-          ${safeText(match.home_team || "Home")}
-          <span>vs</span>
-          ${safeText(match.away_team || "Away")}
-        </div>
-
-        <div class="fixture-time">
-          ${safeText(formatDateTime(match.kickoff_at))}
-        </div>
-
-        ${scoreHTML}
-
-        <span class="fixture-status">
-          ${safeText(statusLabels[status] || status)}
-        </span>
-      </article>`;
-  }).join("");
+  return difference >= 0 && difference < days;
 }
 
-function renderTeamPicks() {
-  const body = $("#team-picks-table");
-  const count = $("#predictions-count");
-
-  if (count) {
-    count.textContent = String(dashboardState.predictions.length);
-  }
-
-  if (!body) return;
-
-  const predictions = dashboardState.predictions.filter(
-    (item) => item.category !== "over_under"
-  );
-
-  if (!predictions.length) {
-    body.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty">
-          No published team picks are currently available.
-          Fixtures alone are not predictions.
-        </td>
-      </tr>`;
-    return;
-  }
-
-  body.innerHTML = predictions.map((item) => {
-    const match = item.matches || {};
-
-    const home = match.home_team || item.home_team || "—";
-    const away = match.away_team || item.away_team || "—";
-
-    return `
-      <tr>
-        <td class="match-name">
-          ${safeText(home)} vs ${safeText(away)}
-        </td>
-
-        <td>${safeText(match.league_name || item.league_name || "—")}</td>
-
-        <td>${safeText(item.selection || "—")}</td>
-
-        <td><span class="odds-badge">
-          ${formatOdds(item.decimal_odds)}
-        </span></td>
-
-        <td>${formatProbability(item.estimated_probability)}</td>
-
-        <td>${safeText(item.reasoning || "—")}</td>
-
-        <td>${resultBadge(item.result)}</td>
-      </tr>`;
-  }).join("");
+function setText(selector, value) {
+  const element = $(selector);
+  if (element) element.textContent = value;
 }
 
-function renderGoalMarkets() {
-  const body = $("#goals-table");
-
-  if (!body) return;
-
-  const predictions = dashboardState.predictions.filter(
-    (item) => item.category === "over_under"
-  );
-
-  if (!predictions.length) {
-    body.innerHTML = `
-      <tr>
-        <td colspan="5" class="empty">
-          No saved Over/Under predictions are available yet.
-        </td>
-      </tr>`;
-    return;
-  }
-
-  body.innerHTML = predictions.map((item) => {
-    const match = item.matches || {};
-
-    return `
-      <tr>
-        <td class="match-name">
-          ${safeText(match.home_team || "—")} vs
-          ${safeText(match.away_team || "—")}
-        </td>
-
-        <td>${safeText(item.market || item.selection || "—")}</td>
-
-        <td><span class="odds-badge">
-          ${formatOdds(item.decimal_odds)}
-        </span></td>
-
-        <td>${formatProbability(item.estimated_probability)}</td>
-
-        <td>${safeText(item.reasoning || "—")}</td>
-      </tr>`;
-  }).join("");
+function setHTML(selector, value) {
+  const element = $(selector);
+  if (element) element.innerHTML = value;
 }
 
-function renderSlips() {
-  const slipDefinitions = [
-    { category: "odds_2", selector: "#slip-2", target: "2.00", title: "Conservative Slip" },
-    { category: "odds_5", selector: "#slip-5", target: "5.00", title: "Medium Odds Slip" },
-    { category: "odds_10", selector: "#slip-10", target: "10.00", title: "High Odds Slip" }
-  ];
+function resultClass(result) {
+  const normalized = String(result || "pending").toLowerCase();
 
-  slipDefinitions.forEach((definition) => {
-    const container = $(definition.selector);
+  if (normalized === "won") return "result-won";
+  if (normalized === "lost") return "result-lost";
+  if (normalized === "void") return "result-void";
 
-    if (!container) return;
-
-    const slip = dashboardState.slips.find(
-      (item) => item.category === definition.category
-    );
-
-    if (!slip) {
-      container.innerHTML = `
-        <div class="slip-top">
-          <strong>${definition.target}</strong>
-          <span>TARGET ODDS</span>
-        </div>
-
-        <h3>${definition.title}</h3>
-
-        <p>
-          No published slip is available. This section will update
-          when a slip is saved in the database.
-        </p>`;
-      return;
-    }
-
-    container.innerHTML = `
-      <div class="slip-top">
-        <strong>${definition.target}</strong>
-        <span>TARGET ODDS</span>
-      </div>
-
-      <h3>${definition.title}</h3>
-
-      <p>
-        Combined odds:
-        <strong>${formatOdds(slip.combined_odds)}</strong>
-      </p>
-
-      <p>
-        Date: ${safeText(String(slip.slip_date || "—").slice(0, 10))}
-      </p>
-
-      <p>${safeText(slip.reasoning || "Published slip")}</p>
-
-      ${resultBadge(slip.status)}`;
-  });
+  return "result-pending";
 }
 
-function calculatePerformance(records) {
-  const settled = records.filter((item) =>
-    ["won", "lost"].includes(normalizeResult(item.result))
-  );
+function resultLabel(result) {
+  const normalized = String(result || "pending").toLowerCase();
 
-  const won = settled.filter(
-    (item) => normalizeResult(item.result) === "won"
-  ).length;
+  if (normalized === "won") return "WON";
+  if (normalized === "lost") return "LOST";
+  if (normalized === "void") return "VOID";
 
-  const lost = settled.length - won;
-
-  return {
-    won,
-    lost,
-    settled: settled.length,
-    accuracy: settled.length
-      ? Math.round((won / settled.length) * 1000) / 10
-      : 0
-  };
+  return "PENDING";
 }
 
-function renderPerformance() {
-  const allowedDates = getPreviousDateKeys(2);
-
-  const recentRecords = dashboardState.history.filter((item) => {
-    const date = String(
-      item.date ||
-      item.prediction_date ||
-      item.slip_date ||
-      ""
-    ).slice(0, 10);
-
-    return allowedDates.includes(date);
-  });
-
-  const performance = calculatePerformance(recentRecords);
-
-  if ($("#won-count")) {
-    $("#won-count").textContent = String(performance.won);
-  }
-
-  if ($("#lost-count")) {
-    $("#lost-count").textContent = String(performance.lost);
-  }
-
-  if ($("#settled-count")) {
-    $("#settled-count").textContent = String(performance.settled);
-  }
-
-  if ($("#recent-settled-count")) {
-    $("#recent-settled-count").textContent = String(performance.settled);
-  }
-
-  if ($("#accuracy-count")) {
-    $("#accuracy-count").textContent = `${performance.accuracy}%`;
-  }
-
-  if ($("#last-updated")) {
-    $("#last-updated").textContent = dashboardState.lastUpdated
-      ? formatDateTime(dashboardState.lastUpdated)
-      : "—";
-  }
-
-  const body = $("#history-table");
-
-  if (!body) return;
-
-  if (!recentRecords.length) {
-    body.innerHTML = `
-      <tr>
-        <td colspan="5" class="empty">
-          No prediction results were recorded during the previous
-          two days. Pending predictions are not counted as wins or losses.
-        </td>
-      </tr>`;
-    return;
-  }
-
-  recentRecords.sort((a, b) => {
-    const dateA = String(a.date || a.prediction_date || a.slip_date || "");
-    const dateB = String(b.date || b.prediction_date || b.slip_date || "");
-    return dateB.localeCompare(dateA);
-  });
-
-  body.innerHTML = recentRecords.map((item) => {
-    const date = String(
-      item.date ||
-      item.prediction_date ||
-      item.slip_date ||
-      "—"
-    ).slice(0, 10);
-
-    const match = item.matches || {};
-
-    const matchName =
-      item.home_team && item.away_team
-        ? `${item.home_team} vs ${item.away_team}`
-        : match.home_team && match.away_team
-          ? `${match.home_team} vs ${match.away_team}`
-          : item.category && item.category.startsWith("odds_")
-            ? `${item.category.replace("odds_", "")}.00 odds slip`
-            : "—";
-
-    return `
-      <tr>
-        <td>${safeText(date)}</td>
-        <td>${safeText(matchName)}</td>
-        <td>${safeText(item.selection || item.category || "—")}</td>
-        <td>${formatOdds(item.decimal_odds ?? item.combined_odds)}</td>
-        <td>${resultBadge(item.result || item.status)}</td>
-      </tr>`;
-  }).join("");
+function emptyCard(message) {
+  return `
+    <article class="empty-card">
+      <div class="empty">${escapeHTML(message)}</div>
+    </article>
+  `;
 }
 
-async function loadDashboard() {
-  updateConnection("Connecting to BrayTips...");
+function errorMessage(message) {
+  return `
+    <article class="empty-card">
+      <div class="empty">${escapeHTML(message)}</div>
+    </article>
+  `;
+}
+
+
+/* ==========================================
+   CONNECTION STATUS
+   ========================================== */
+
+function setConnectionStatus(status, message) {
+  const badge = $("#connection-status");
+  if (!badge) return;
+
+  badge.classList.remove("online", "error");
+
+  if (status === "online") badge.classList.add("online");
+  if (status === "error") badge.classList.add("error");
+
+  badge.textContent = message;
+}
+
+
+/* ==========================================
+   FETCH DASHBOARD DATA
+   ========================================== */
+
+async function fetchDashboard() {
+  if (state.loading) return;
+
+  state.loading = true;
 
   try {
-    const response = await fetch(
-      `${BRAYTIPS_CONFIG.apiBase}/api/dashboard`,
-      {
-        method: "GET",
-        headers: { Accept: "application/json" },
-        cache: "no-store"
-      }
-    );
+    setConnectionStatus("loading", "Updating data...");
+
+    const response = await fetch(`${CONFIG.apiBase}/api/dashboard`, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json"
+      },
+      cache: "no-store"
+    });
 
     if (!response.ok) {
-      throw new Error(`Dashboard API returned HTTP ${response.status}`);
+      throw new Error(`Dashboard request failed (${response.status})`);
     }
 
     const data = await response.json();
 
-    if (!data.success) {
-      throw new Error(data.error || "The dashboard API returned an error.");
+    if (data.success === false || data.error) {
+      throw new Error(data.error || "The dashboard returned an error.");
     }
 
-    dashboardState.matches = Array.isArray(data.matches)
-      ? data.matches
-      : [];
+    /*
+      Expected response:
+      {
+        matches: [],
+        predictions: [],
+        slips: []
+      }
+    */
 
-    dashboardState.predictions = Array.isArray(data.predictions)
+    state.matches = Array.isArray(data.matches) ? data.matches : [];
+    state.predictions = Array.isArray(data.predictions)
       ? data.predictions
       : [];
+    state.slips = Array.isArray(data.slips) ? data.slips : [];
 
-    dashboardState.slips = Array.isArray(data.slips)
-      ? data.slips
-      : [];
+    state.lastUpdated = new Date();
 
-    dashboardState.history = [
-      ...dashboardState.predictions.map((item) => ({
-        ...item,
-        date: item.prediction_date
-      })),
-      ...dashboardState.slips.map((item) => ({
-        ...item,
-        date: item.slip_date,
-        result: item.status
-      }))
-    ];
+    renderDashboard();
 
-    dashboardState.lastUpdated =
-      data.generatedAt || new Date().toISOString();
-
-    updateConnection("Connected to BrayTips API", "online");
-
-    renderFixtures();
-    renderTeamPicks();
-    renderGoalMarkets();
-    renderSlips();
-    renderPerformance();
-
-    console.log("BrayTips dashboard updated", {
-      fixtures: dashboardState.matches.length,
-      predictions: dashboardState.predictions.length,
-      slips: dashboardState.slips.length
-    });
+    setConnectionStatus(
+      "online",
+      `Connected · ${new Intl.DateTimeFormat("en-GB", {
+        timeZone: CONFIG.timezone,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      }).format(state.lastUpdated)}`
+    );
 
   } catch (error) {
     console.error("BrayTips dashboard error:", error);
-    updateConnection("Connection error", "error");
 
-    const container = $("#fixtures-list");
+    setConnectionStatus("error", "Connection error");
 
-    if (container && !dashboardState.matches.length) {
-      container.innerHTML = `
-        <div class="empty-card">
-          <strong>Unable to load dashboard data</strong>
-          <p>${safeText(error.message)}</p>
-          <p>
-            Check that the BrayTips Worker is deployed and its
-            /api/dashboard endpoint is working.
-          </p>
-        </div>`;
-    }
+    showConnectionErrors(
+      "Unable to load dashboard data. Check the API connection and try again."
+    );
+
+  } finally {
+    state.loading = false;
   }
 }
 
-function setupNavigation() {
+
+/* ==========================================
+   ERROR DISPLAY
+   ========================================== */
+
+function showConnectionErrors(message) {
+  const containers = [
+    "#slips-container",
+    "#team-picks-container",
+    "#goals-container",
+    "#fixtures-container"
+  ];
+
+  containers.forEach((selector) => {
+    const element = $(selector);
+    if (element) element.innerHTML = errorMessage(message);
+  });
+
+  setHTML(
+    "#performance-table",
+    `<tr><td colspan="6" class="empty">${escapeHTML(message)}</td></tr>`
+  );
+}
+
+
+/* ==========================================
+   MATCH LOOKUP
+   ========================================== */
+
+function matchForPrediction(prediction) {
+  const matchId = prediction.match_id;
+
+  if (matchId !== undefined && matchId !== null) {
+    const match = state.matches.find(
+      (item) => String(item.id) === String(matchId)
+    );
+
+    if (match) return match;
+  }
+
+  return prediction.match || prediction.matches || null;
+}
+
+function predictionMatchName(prediction) {
+  const match = matchForPrediction(prediction);
+
+  if (match) {
+    const home = match.home_team || match.homeTeam || "";
+    const away = match.away_team || match.awayTeam || "";
+
+    if (home || away) return `${home} vs ${away}`;
+  }
+
+  return prediction.match_name ||
+    prediction.fixture_name ||
+    prediction.matchName ||
+    "Match details unavailable";
+}
+
+function predictionKickoff(prediction) {
+  const match = matchForPrediction(prediction);
+
+  return prediction.kickoff_at ||
+    prediction.kickoff ||
+    match?.kickoff_at ||
+    match?.kickoff ||
+    null;
+}
+
+
+/* ==========================================
+   DASHBOARD OVERVIEW
+   ========================================== */
+
+function renderStats() {
+  const todayMatches = state.matches.filter((match) =>
+    isToday(match.kickoff_at)
+  );
+
+  const todayPredictions = state.predictions.filter((prediction) =>
+    isToday(prediction.prediction_date || prediction.created_at)
+  );
+
+  const pending = todayPredictions.filter((prediction) =>
+    String(prediction.result || "pending").toLowerCase() === "pending"
+  );
+
+  const settled = todayPredictions.filter((prediction) =>
+    ["won", "lost"].includes(
+      String(prediction.result || "").toLowerCase()
+    )
+  );
+
+  setText("#stat-fixtures", todayMatches.length);
+  setText("#stat-predictions", todayPredictions.length);
+  setText("#stat-pending", pending.length);
+  setText("#stat-settled", settled.length);
+}
+
+
+/* ==========================================
+   FIXTURES
+   ========================================== */
+
+function renderFixtures() {
+  const container = $("#fixtures-container");
+  if (!container) return;
+
+  const fixtures = state.matches
+    .filter((match) => {
+      return isToday(match.kickoff_at) &&
+        ["upcoming", "live"].includes(
+          String(match.match_status || "upcoming").toLowerCase()
+        );
+    })
+    .sort((a, b) =>
+      new Date(a.kickoff_at) - new Date(b.kickoff_at)
+    );
+
+  if (!fixtures.length) {
+    container.innerHTML = emptyCard(
+      "No upcoming fixtures found for today in the database."
+    );
+    return;
+  }
+
+  container.innerHTML = fixtures.slice(0, 12).map((match) => `
+    <article class="fixture-card">
+      <div class="fixture-league">
+        ${escapeHTML(match.league_name || "Football")}
+        ${match.country ? ` · ${escapeHTML(match.country)}` : ""}
+      </div>
+
+      <div class="fixture-teams">
+        ${escapeHTML(match.home_team || "Home team")}
+        <br>
+        <span style="color:#758399;font-weight:500">vs</span>
+        <br>
+        ${escapeHTML(match.away_team || "Away team")}
+      </div>
+
+      <div class="fixture-time">
+        Kickoff: ${escapeHTML(formatDate(match.kickoff_at, true))}
+      </div>
+
+      <span class="fixture-status">
+        ${escapeHTML(match.match_status || "upcoming")}
+      </span>
+    </article>
+  `).join("");
+}
+
+
+/* ==========================================
+   PREDICTION CATEGORIES
+   ========================================== */
+
+function isWinnerPrediction(prediction) {
+  return String(prediction.category || "").toLowerCase() === "winner_team";
+}
+
+function isGoalsPrediction(prediction) {
+  const category = String(prediction.category || "").toLowerCase();
+  const market = String(prediction.market || "").toLowerCase();
+
+  return category === "over_under" ||
+    market.includes("over") ||
+    market.includes("under") ||
+    market.includes("total goals");
+}
+
+function predictionCard(prediction) {
+  const result = String(prediction.result || "pending").toLowerCase();
+  const probability = Number(prediction.estimated_probability);
+
+  const probabilityText = Number.isFinite(probability)
+    ? `${Math.round(probability <= 1 ? probability * 100 : probability)}%`
+    : "Not available";
+
+  return `
+    <article class="fixture-card">
+      <div class="fixture-league">
+        ${escapeHTML(prediction.market || "Prediction")}
+      </div>
+
+      <div class="fixture-teams">
+        ${escapeHTML(predictionMatchName(prediction))}
+      </div>
+
+      <div class="fixture-time">
+        Pick: <strong>${escapeHTML(prediction.selection || "Not specified")}</strong>
+      </div>
+
+      <div class="fixture-time">
+        Odds: <strong>${escapeHTML(formatOdds(prediction.decimal_odds))}</strong>
+        &nbsp; · &nbsp;
+        Probability: ${escapeHTML(probabilityText)}
+      </div>
+
+      ${prediction.reasoning ? `
+        <p>${escapeHTML(prediction.reasoning)}</p>
+      ` : ""}
+
+      <span class="result-badge ${resultClass(result)}">
+        ${escapeHTML(resultLabel(result))}
+      </span>
+    </article>
+  `;
+}
+
+function renderPredictions() {
+  const todayPredictions = state.predictions.filter((prediction) =>
+    isToday(prediction.prediction_date || prediction.created_at)
+  );
+
+  const teamPicks = todayPredictions.filter(isWinnerPrediction);
+  const goalsPicks = todayPredictions.filter(isGoalsPrediction);
+
+  const teamContainer = $("#team-picks-container");
+  const goalsContainer = $("#goals-container");
+
+  if (teamContainer) {
+    teamContainer.innerHTML = teamPicks.length
+      ? teamPicks.slice(0, 3).map(predictionCard).join("")
+      : emptyCard("No team predictions have been published for today.");
+  }
+
+  if (goalsContainer) {
+    goalsContainer.innerHTML = goalsPicks.length
+      ? goalsPicks.map(predictionCard).join("")
+      : emptyCard("No over/under predictions have been published for today.");
+  }
+}
+
+
+/* ==========================================
+   ODDS SLIPS
+   ========================================== */
+
+const SLIP_CATEGORIES = [
+  { category: "odds_2", target: 2.00, label: "LOWER TARGET" },
+  { category: "odds_5", target: 5.00, label: "MID TARGET" },
+  { category: "odds_10", target: 10.00, label: "HIGH TARGET" }
+];
+
+function slipSelections(slip) {
+  if (Array.isArray(slip.selections)) return slip.selections;
+  if (Array.isArray(slip.slip_selections)) return slip.slip_selections;
+  return [];
+}
+
+function selectionPrediction(selection) {
+  if (selection.prediction && typeof selection.prediction === "object") {
+    return selection.prediction;
+  }
+
+  if (selection.predictions && typeof selection.predictions === "object") {
+    return selection.predictions;
+  }
+
+  return state.predictions.find(
+    (prediction) =>
+      String(prediction.id) === String(selection.prediction_id)
+  ) || null;
+}
+
+function selectionMatchName(selection) {
+  const prediction = selectionPrediction(selection);
+
+  if (prediction) return predictionMatchName(prediction);
+
+  const match = state.matches.find(
+    (item) => String(item.id) === String(selection.match_id)
+  );
+
+  if (match) {
+    return `${match.home_team} vs ${match.away_team}`;
+  }
+
+  return selection.match_name || "Match details unavailable";
+}
+
+function renderSlipCard(categoryConfig) {
+  const slip = state.slips.find((item) =>
+    item.category === categoryConfig.category &&
+    isToday(item.slip_date || item.created_at)
+  );
+
+  if (!slip) {
+    return `
+      <article class="slip-card">
+        <div class="slip-top">
+          <strong>${categoryConfig.target.toFixed(2)}</strong>
+          <span>${categoryConfig.label}</span>
+        </div>
+        <h3>${categoryConfig.target.toFixed(2)} Odds Slip</h3>
+        <p>No published slip is available for today.</p>
+      </article>
+    `;
+  }
+
+  const selections = slipSelections(slip);
+
+  const combinedOdds = Number(slip.combined_odds);
+  const displayedOdds = Number.isFinite(combinedOdds) && combinedOdds > 1
+    ? combinedOdds.toFixed(2)
+    : "Pending";
+
+  const selectionHTML = selections.length
+    ? `
+      <ul class="slip-selections">
+        ${selections.map((selection) => {
+          const prediction = selectionPrediction(selection);
+
+          const odds = selection.odds_at_publication ??
+            prediction?.decimal_odds;
+
+          return `
+            <li>
+              <span>${escapeHTML(selectionMatchName(selection))}
+                <br>
+                <span style="color:#758399">
+                  ${escapeHTML(prediction?.selection || "")}
+                </span>
+              </span>
+              <strong>${escapeHTML(formatOdds(odds))}</strong>
+            </li>
+          `;
+        }).join("")}
+      </ul>
+    `
+    : `<p>Slip exists, but selection details were not returned by the API.</p>`;
+
+  return `
+    <article class="slip-card">
+      <div class="slip-top">
+        <strong>${escapeHTML(displayedOdds)}</strong>
+        <span>${escapeHTML(categoryConfig.label)}</span>
+      </div>
+
+      <h3>${categoryConfig.target.toFixed(2)} Odds Slip</h3>
+
+      <p>
+        Status:
+        <span class="result-badge ${resultClass(slip.status)}">
+          ${escapeHTML(resultLabel(slip.status))}
+        </span>
+      </p>
+
+      ${selectionHTML}
+    </article>
+  `;
+}
+
+function renderSlips() {
+  const container = $("#slips-container");
+  if (!container) return;
+
+  container.innerHTML = SLIP_CATEGORIES
+    .map(renderSlipCard)
+    .join("");
+}
+
+
+/* ==========================================
+   PERFORMANCE — LAST TWO DAYS
+   ========================================== */
+
+function renderPerformance() {
+  const recentPredictions = state.predictions.filter((prediction) =>
+    isWithinRecentDays(
+      prediction.prediction_date || prediction.created_at
+    )
+  );
+
+  const settled = recentPredictions.filter((prediction) =>
+    ["won", "lost"].includes(
+      String(prediction.result || "").toLowerCase()
+    )
+  );
+
+  const won = settled.filter((prediction) =>
+    String(prediction.result).toLowerCase() === "won"
+  );
+
+  const lost = settled.filter((prediction) =>
+    String(prediction.result).toLowerCase() === "lost"
+  );
+
+  const winRate = settled.length
+    ? Math.round((won.length / settled.length) * 100)
+    : 0;
+
+  setText("#performance-settled", settled.length);
+  setText("#performance-won", won.length);
+  setText("#performance-lost", lost.length);
+  setText("#performance-rate", `${winRate}%`);
+
+  const table = $("#performance-table");
+  if (!table) return;
+
+  const sorted = [...recentPredictions].sort((a, b) => {
+    const dateA = new Date(a.prediction_date || a.created_at || 0);
+    const dateB = new Date(b.prediction_date || b.created_at || 0);
+    return dateB - dateA;
+  });
+
+  if (!sorted.length) {
+    table.innerHTML = `
+      <tr>
+        <td colspan="6" class="empty">
+          No prediction history is available for the previous two days.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  table.innerHTML = sorted.map((prediction) => `
+    <tr>
+      <td>${escapeHTML(formatDate(
+        prediction.prediction_date || prediction.created_at
+      ))}</td>
+      <td class="match-name">${escapeHTML(predictionMatchName(prediction))}</td>
+      <td>${escapeHTML(prediction.market || "—")}</td>
+      <td>${escapeHTML(prediction.selection || "—")}</td>
+      <td>
+        <span class="odds-badge">
+          ${escapeHTML(formatOdds(prediction.decimal_odds))}
+        </span>
+      </td>
+      <td>
+        <span class="result-badge ${resultClass(prediction.result)}">
+          ${escapeHTML(resultLabel(prediction.result))}
+        </span>
+      </td>
+    </tr>
+  `).join("");
+}
+
+
+/* ==========================================
+   RENDER ALL SECTIONS
+   ========================================== */
+
+function renderDashboard() {
+  renderStats();
+  renderFixtures();
+  renderPredictions();
+  renderSlips();
+  renderPerformance();
+}
+
+
+/* ==========================================
+   DATE DISPLAY
+   ========================================== */
+
+function renderDate() {
+  const dateElement = $("#current-date");
+  if (!dateElement) return;
+
+  dateElement.textContent = new Intl.DateTimeFormat("en-GB", {
+    timeZone: CONFIG.timezone,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  }).format(new Date());
+}
+
+
+/* ==========================================
+   MOBILE SIDEBAR
+   ========================================== */
+
+function setupSidebar() {
   const sidebar = $("#sidebar");
   const toggle = $("#menu-toggle");
+  const overlay = $("#sidebar-overlay");
+
+  if (!sidebar || !toggle) return;
+
+  function closeSidebar() {
+    sidebar.classList.remove("open");
+
+    if (overlay) overlay.classList.remove("active");
+
+    toggle.setAttribute("aria-expanded", "false");
+  }
+
+  function openSidebar() {
+    sidebar.classList.add("open");
+
+    if (overlay) overlay.classList.add("active");
+
+    toggle.setAttribute("aria-expanded", "true");
+  }
+
+  toggle.addEventListener("click", () => {
+    sidebar.classList.contains("open")
+      ? closeSidebar()
+      : openSidebar();
+  });
+
+  if (overlay) {
+    overlay.addEventListener("click", closeSidebar);
+  }
 
   document.querySelectorAll(".nav-link").forEach((link) => {
     link.addEventListener("click", () => {
@@ -597,36 +767,27 @@ function setupNavigation() {
       });
 
       link.classList.add("active");
-
-      if (sidebar) sidebar.classList.remove("open");
+      closeSidebar();
     });
   });
 
-  if (toggle && sidebar) {
-    toggle.addEventListener("click", () => {
-      sidebar.classList.toggle("open");
-    });
-  }
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 760) closeSidebar();
+  });
 }
 
-function initializeBrayTips() {
-  updateDateDisplay();
-  setupNavigation();
-  loadDashboard();
 
-  setInterval(updateDateDisplay, 60 * 1000);
-  setInterval(loadDashboard, BRAYTIPS_CONFIG.refreshInterval);
-}
+/* ==========================================
+   INITIALIZATION
+   ========================================== */
 
-window.BrayTips = {
-  loadDashboard,
-  calculatePerformance,
-  getState: () => structuredClone(dashboardState)
-};
+document.addEventListener("DOMContentLoaded", () => {
+  renderDate();
+  setupSidebar();
+  fetchDashboard();
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initializeBrayTips);
-} else {
-  initializeBrayTips();
-}
+  window.setInterval(() => {
+    fetchDashboard();
+  }, CONFIG.refreshIntervalMs);
+});
 ```
