@@ -1,5 +1,6 @@
+```javascript
 /*
- * BrayTips redesigned frontend.
+ * BrayTips public frontend.
  * API credentials remain in Cloudflare Worker secrets.
  */
 
@@ -11,7 +12,6 @@ const state = {
   slips: [],
   analysis: [],
   performance: null,
-  oddsHistory: [],
   currentView: "dashboard"
 };
 
@@ -28,14 +28,21 @@ function escapeHTML(value) {
   })[char]);
 }
 
+function setText(selector, value) {
+  const element = $(selector);
+  if (element) element.textContent = String(value ?? "");
+}
+
+function setHTML(selector, value) {
+  const element = $(selector);
+  if (element) element.innerHTML = value;
+}
+
 function dateTime(value) {
   if (!value) return "Kick-off unavailable";
 
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Date unavailable";
-  }
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
 
   return new Intl.DateTimeFormat("en-KE", {
     timeZone: "Africa/Nairobi",
@@ -52,7 +59,6 @@ function shortDate(value) {
   if (!value) return "Date unavailable";
 
   const date = new Date(value);
-
   if (Number.isNaN(date.getTime())) return "Date unavailable";
 
   return new Intl.DateTimeFormat("en-KE", {
@@ -66,6 +72,11 @@ function shortDate(value) {
 function showNotice(message, error = false) {
   const notice = $("#notice");
 
+  if (!notice) {
+    console[error ? "error" : "log"](message);
+    return;
+  }
+
   notice.textContent = message;
   notice.classList.toggle("error", error);
 }
@@ -74,27 +85,25 @@ function normalize(value) {
   return String(value || "").trim().toLowerCase();
 }
 
-function moneyUnits(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
+function decimalOdds(value) {
+  if (value === null || value === undefined || value === "") return null;
 
-  const prefix = n > 0 ? "+" : "";
-  return prefix + n.toFixed(2) + " units";
+  const number = Number(value);
+  return Number.isFinite(number) && number > 1 ? number : null;
 }
 
-function decimalOdds(value) {
-  const n = Number(value);
+function moneyUnits(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "—";
 
-  if (!Number.isFinite(n) || n <= 1) return null;
-
-  return n;
+  return `${number > 0 ? "+" : ""}${number.toFixed(2)} units`;
 }
 
 function getMatch(prediction) {
   if (prediction.match) return prediction.match;
 
-  return state.matches.find(
-    match => String(match.id) === String(prediction.match_id)
+  return state.matches.find(match =>
+    String(match.id) === String(prediction.match_id)
   ) || null;
 }
 
@@ -110,31 +119,25 @@ function fixtureTitle(match, prediction) {
 function resultTag(result) {
   const value = normalize(result || "pending");
 
-  if (value === "won") {
-    return '<span class="tag green">WON</span>';
-  }
-
-  if (value === "lost") {
-    return '<span class="tag red">LOST</span>';
-  }
-
-  if (value === "void") {
-    return '<span class="tag">VOID</span>';
-  }
+  if (value === "won") return '<span class="tag green">WON</span>';
+  if (value === "lost") return '<span class="tag red">LOST</span>';
+  if (value === "void") return '<span class="tag">VOID</span>';
 
   return '<span class="tag blue">PENDING</span>';
 }
 
+/* -------------------- FIXTURES -------------------- */
+
 function fixtureCard(match) {
   const status = normalize(match.match_status || "upcoming");
 
-  const statusLabel = {
+  const labels = {
     live: "LIVE",
     finished: "FT",
     postponed: "POSTPONED",
     cancelled: "CANCELLED",
     upcoming: "UPCOMING"
-  }[status] || status.toUpperCase();
+  };
 
   const stats = [];
 
@@ -158,7 +161,7 @@ function fixtureCard(match) {
           · ${escapeHTML(match.country || "")}
         </span>
         <span class="tag ${status === "live" ? "blue" : ""}">
-          ${escapeHTML(statusLabel)}
+          ${escapeHTML(labels[status] || status.toUpperCase())}
         </span>
       </div>
 
@@ -187,36 +190,40 @@ function renderFixtures() {
   const leagueFilter = $("#leagueFilter");
   const searchInput = $("#fixtureSearch");
 
-  if (!container || !leagueFilter || !searchInput) return;
+  // These controls are only present on the Fixtures view.
+  if (!container) return;
 
-  const selectedLeague = leagueFilter.value;
-  const search = normalize(searchInput.value);
+  const selectedLeague = leagueFilter?.value || "";
+  const search = normalize(searchInput?.value || "");
 
-  const matches = state.matches.filter(match => {
+  const filtered = state.matches.filter(match => {
     const leagueMatches =
       !selectedLeague || match.league_name === selectedLeague;
 
-    const text = normalize(
+    const searchableText = normalize(
       `${match.home_team || ""} ${match.away_team || ""} ${match.league_name || ""}`
     );
 
-    return leagueMatches && (!search || text.includes(search));
+    return leagueMatches &&
+      (!search || searchableText.includes(search));
   });
 
-  if (!matches.length) {
+  if (!filtered.length) {
     container.innerHTML = `
       <div class="empty-state">
-        No matching fixtures found. Try a different competition or search term.
+        No matching fixtures found. Try another competition or search term.
       </div>
     `;
     return;
   }
 
-  container.innerHTML = matches.map(fixtureCard).join("");
+  container.innerHTML = filtered.map(fixtureCard).join("");
 }
 
 function populateLeagueFilter() {
   const select = $("#leagueFilter");
+
+  // Safeguard: the filter may not exist on another page or in an older HTML version.
   if (!select) return;
 
   const current = select.value;
@@ -236,6 +243,8 @@ function populateLeagueFilter() {
   }
 }
 
+/* -------------------- PREDICTIONS -------------------- */
+
 function predictionMarket(prediction) {
   return normalize(prediction.market || "");
 }
@@ -248,42 +257,45 @@ function isOverUnder(prediction) {
   const market = predictionMarket(prediction);
   const selection = normalize(prediction.selection);
 
-  return (
-    market.includes("over/under") ||
+  return market.includes("over/under") ||
     market.includes("over under") ||
-    market.includes("goals") ||
     market.includes("total goals") ||
-    selection.includes("over ") ||
-    selection.includes("under ")
-  );
+    market.includes("goals") ||
+    /^over\s/.test(selection) ||
+    /^under\s/.test(selection);
 }
 
 function isTeamWinner(prediction) {
   const category = predictionCategory(prediction);
   const market = predictionMarket(prediction);
 
-  return (
-    category === "winner_team" ||
+  return category === "winner_team" ||
     market === "1x2" ||
     market.includes("match winner") ||
-    market.includes("team winner")
-  );
-}
-
-function slipCategory(slip) {
-  return normalize(slip.category);
+    market.includes("team winner");
 }
 
 function renderPredictionCard(prediction) {
   const match = getMatch(prediction);
   const odds = decimalOdds(prediction.decimal_odds);
-  const selection = prediction.selection || prediction.prediction || "Not specified";
+  const selection =
+    prediction.selection || prediction.prediction || "Not specified";
   const market = prediction.market || "Market unavailable";
+
+  const probability = Number(prediction.estimated_probability);
+  const probabilityText =
+    prediction.estimated_probability !== null &&
+    prediction.estimated_probability !== undefined &&
+    Number.isFinite(probability)
+      ? `<p>Model estimate: ${(probability * 100).toFixed(1)}%</p>`
+      : "";
 
   return `
     <article class="content-card">
       <div class="fixture-meta">
-        <span class="tag blue">${escapeHTML(prediction.category || "Prediction")}</span>
+        <span class="tag blue">
+          ${escapeHTML(prediction.category || "Prediction")}
+        </span>
         ${resultTag(prediction.result)}
       </div>
 
@@ -293,8 +305,7 @@ function renderPredictionCard(prediction) {
         <span>${escapeHTML(market)}</span>
         <strong>${escapeHTML(selection)}</strong>
         <span>
-          Recorded odds:
-          ${odds ? odds.toFixed(2) : "Not available"}
+          Recorded odds: ${odds ? odds.toFixed(2) : "Not available"}
         </span>
       </div>
 
@@ -304,71 +315,55 @@ function renderPredictionCard(prediction) {
           : ""
       }
 
-      ${
-        prediction.estimated_probability != null
-          ? `<p>Model estimate: ${
-              (Number(prediction.estimated_probability) * 100).toFixed(1)
-            }%</p>`
-          : ""
-      }
+      ${probabilityText}
 
       <div class="card-foot">
-        <span>${escapeHTML(shortDate(prediction.prediction_date || prediction.created_at))}</span>
+        <span>${escapeHTML(shortDate(
+          prediction.prediction_date || prediction.created_at
+        ))}</span>
         <span>${escapeHTML(match?.league_name || "Competition unavailable")}</span>
       </div>
     </article>
   `;
 }
 
-function emptyMessage(message) {
-  return `<div class="empty-state">${escapeHTML(message)}</div>`;
-}
-
-function renderPredictionList(containerSelector, predictions, message) {
-  const container = $(containerSelector);
+function renderPredictionList(selector, predictions, message) {
+  const container = $(selector);
   if (!container) return;
 
   container.innerHTML = predictions.length
     ? predictions.map(renderPredictionCard).join("")
-    : emptyMessage(message);
+    : `<div class="empty-state">${escapeHTML(message)}</div>`;
 }
 
-function renderSlips() {
-  const byCategory = {
-    odds2: [],
-    odds5: [],
-    odds10: []
-  };
-
-  for (const slip of state.slips) {
-    const category = slipCategory(slip);
-
-    if (category === "odds_2" || category.includes("2 odds")) {
-      byCategory.odds2.push(slip);
-    } else if (category === "odds_5" || category.includes("5 odds")) {
-      byCategory.odds5.push(slip);
-    } else if (category === "odds_10" || category.includes("10 odds")) {
-      byCategory.odds10.push(slip);
-    }
-  }
-
-  renderSlipList(
-    "#odds2Container",
-    byCategory.odds2,
-    "No 2 Odds slips have been published yet."
+function renderRecentPredictions() {
+  renderPredictionList(
+    "#recentPredictions",
+    state.predictions.slice(0, 4),
+    "No predictions have been published yet."
   );
+}
 
-  renderSlipList(
-    "#odds5Container",
-    byCategory.odds5,
-    "No 5 Odds slips have been published yet."
+function renderOverUnder() {
+  renderPredictionList(
+    "#overunderContainer",
+    state.predictions.filter(isOverUnder),
+    "No Over/Under predictions have been published yet."
   );
+}
 
-  renderSlipList(
-    "#odds10Container",
-    byCategory.odds10,
-    "No 10 Odds slips have been published yet."
+function renderDaily3() {
+  renderPredictionList(
+    "#daily3Container",
+    state.predictions.filter(isTeamWinner),
+    "No team-winner predictions have been published yet."
   );
+}
+
+/* -------------------- SLIPS -------------------- */
+
+function slipCategory(slip) {
+  return normalize(slip.category);
 }
 
 function renderSlipList(selector, slips, message) {
@@ -376,7 +371,8 @@ function renderSlipList(selector, slips, message) {
   if (!container) return;
 
   if (!slips.length) {
-    container.innerHTML = emptyMessage(message);
+    container.innerHTML =
+      `<div class="empty-state">${escapeHTML(message)}</div>`;
     return;
   }
 
@@ -394,7 +390,9 @@ function renderSlipList(selector, slips, message) {
 
         <div class="selection-box">
           <span>Recorded combined odds</span>
-          <strong class="odds-number">${odds ? odds.toFixed(2) : "Unavailable"}</strong>
+          <strong class="odds-number">
+            ${odds ? odds.toFixed(2) : "Unavailable"}
+          </strong>
           <span>Target: ${escapeHTML(slip.target_odds ?? "—")}</span>
         </div>
 
@@ -402,45 +400,58 @@ function renderSlipList(selector, slips, message) {
 
         <div class="card-foot">
           <span>${escapeHTML(shortDate(slip.slip_date))}</span>
-          <span>${escapeHTML(slip.settled_at ? "Settled " + shortDate(slip.settled_at) : "Not settled")}</span>
+          <span>
+            ${escapeHTML(
+              slip.settled_at
+                ? `Settled ${shortDate(slip.settled_at)}`
+                : "Not settled"
+            )}
+          </span>
         </div>
       </article>
     `;
   }).join("");
 }
 
-function renderOverUnder() {
-  const picks = state.predictions.filter(isOverUnder);
+function renderSlips() {
+  const groups = {
+    odds2: [],
+    odds5: [],
+    odds10: []
+  };
 
-  renderPredictionList(
-    "#overunderContainer",
-    picks,
-    "No Over/Under predictions have been published yet."
+  for (const slip of state.slips) {
+    const category = slipCategory(slip);
+
+    if (category === "odds_2" || category.includes("2 odds")) {
+      groups.odds2.push(slip);
+    } else if (category === "odds_5" || category.includes("5 odds")) {
+      groups.odds5.push(slip);
+    } else if (category === "odds_10" || category.includes("10 odds")) {
+      groups.odds10.push(slip);
+    }
+  }
+
+  renderSlipList(
+    "#odds2Container",
+    groups.odds2,
+    "No 2 Odds slips have been published yet."
+  );
+
+  renderSlipList(
+    "#odds5Container",
+    groups.odds5,
+    "No 5 Odds slips have been published yet."
+  );
+
+  renderSlipList(
+    "#odds10Container",
+    groups.odds10,
+    "No 10 Odds slips have been published yet."
   );
 }
 
-function renderDaily3() {
-  const picks = state.predictions.filter(isTeamWinner);
-
-  renderPredictionList(
-    "#daily3Container",
-    picks,
-    "No team-winner predictions have been published yet. This section will populate when selections are saved."
-  );
-}
-
-function renderRecentPredictions() {
-  renderPredictionList(
-    "#recentPredictions",
-    state.predictions.slice(0, 4),
-    "No predictions have been published yet."
-  );
-}
-
-function setText(selector, value) {
-  const element = $(selector);
-  if (element) element.textContent = value;
-}
+/* -------------------- PERFORMANCE -------------------- */
 
 function renderPerformance() {
   const performance = state.performance;
@@ -456,7 +467,8 @@ function renderPerformance() {
       "#slipPerfTotal",
       "#slipPerfWon",
       "#slipPerfLost",
-      "#slipPerfRate"
+      "#slipPerfRate",
+      "#dashboardWinRate"
     ].forEach(selector => setText(selector, "—"));
 
     return;
@@ -469,9 +481,13 @@ function renderPerformance() {
   setText("#perfWon", p.won ?? 0);
   setText("#perfLost", p.lost ?? 0);
   setText("#perfPending", p.pending ?? 0);
-  setText("#perfWinRate", `${Number(p.winRatePercent || 0).toFixed(2)}%`);
+  setText(
+    "#perfWinRate",
+    `${Number(p.winRatePercent || 0).toFixed(2)}%`
+  );
 
   const profit = Number(p.profitUnits || 0);
+
   setText("#perfProfit", moneyUnits(profit));
 
   const profitElement = $("#perfProfit");
@@ -484,20 +500,25 @@ function renderPerformance() {
   setText("#slipPerfTotal", s.total ?? 0);
   setText("#slipPerfWon", s.won ?? 0);
   setText("#slipPerfLost", s.lost ?? 0);
-  setText("#slipPerfRate", `${Number(s.winRatePercent || 0).toFixed(2)}%`);
-
   setText(
-    "#performanceUpdated",
-    state.performance.generatedAt
-      ? `Last calculated: ${dateTime(state.performance.generatedAt)}`
-      : ""
+    "#slipPerfRate",
+    `${Number(s.winRatePercent || 0).toFixed(2)}%`
   );
 
   setText(
     "#dashboardWinRate",
     `${Number(p.winRatePercent || 0).toFixed(1)}%`
   );
+
+  setText(
+    "#performanceUpdated",
+    performance.generatedAt
+      ? `Last calculated: ${dateTime(performance.generatedAt)}`
+      : ""
+  );
 }
+
+/* -------------------- API -------------------- */
 
 async function getJSON(path) {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -515,7 +536,9 @@ async function getJSON(path) {
   }
 
   if (!response.ok || data.success === false) {
-    throw new Error(data.error || `Request failed (${response.status})`);
+    throw new Error(
+      data.error || `Request failed (${response.status})`
+    );
   }
 
   return data;
@@ -595,12 +618,12 @@ async function loadDashboard() {
 
     if (!state.matches.length) {
       showNotice(
-        "Connected successfully, but no fixtures are stored in the database yet.",
+        "Connected, but no fixtures are currently stored in the database.",
         true
       );
     } else {
       showNotice(
-        "Dashboard refreshed. Only saved database records are displayed."
+        "Dashboard refreshed. Displaying saved database records only."
       );
     }
   } catch (error) {
@@ -615,8 +638,43 @@ async function loadDashboard() {
     setText("#footerApiStatus", "API: unavailable");
 
     showNotice(
-      `Could not load BrayTips: ${error.message}. Check the Worker and try again.`,
+      `Could not load BrayTips data: ${error.message}. Check the Worker and try again.`,
       true
+    );
+
+    setHTML(
+      "#fixturesContainer",
+      '<div class="empty-state">Fixtures could not be loaded. Try refreshing.</div>'
+    );
+
+    setHTML(
+      "#recentPredictions",
+      '<div class="empty-state">Predictions could not be loaded.</div>'
+    );
+
+    setHTML(
+      "#odds2Container",
+      '<div class="empty-state">Data could not be loaded.</div>'
+    );
+
+    setHTML(
+      "#odds5Container",
+      '<div class="empty-state">Data could not be loaded.</div>'
+    );
+
+    setHTML(
+      "#odds10Container",
+      '<div class="empty-state">Data could not be loaded.</div>'
+    );
+
+    setHTML(
+      "#overunderContainer",
+      '<div class="empty-state">Data could not be loaded.</div>'
+    );
+
+    setHTML(
+      "#daily3Container",
+      '<div class="empty-state">Data could not be loaded.</div>'
     );
   } finally {
     if (refreshButton) {
@@ -625,6 +683,8 @@ async function loadDashboard() {
     }
   }
 }
+
+/* -------------------- NAVIGATION -------------------- */
 
 function showView(name) {
   const validViews = [
@@ -643,21 +703,32 @@ function showView(name) {
   state.currentView = name;
 
   $$(".view").forEach(view => {
-    view.classList.toggle("active", view.id === `${name}View`);
+    view.classList.toggle(
+      "active",
+      view.id === `${name}View`
+    );
   });
 
   $$(".nav-button").forEach(button => {
-    button.classList.toggle("active", button.dataset.view === name);
+    button.classList.toggle(
+      "active",
+      button.dataset.view === name
+    );
   });
 
   const nav = $("#mainNav");
   const toggle = $("#menuToggle");
 
   if (nav) nav.classList.remove("open");
-  if (toggle) toggle.setAttribute("aria-expanded", "false");
 
-  if (history.replaceState) {
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", "false");
+  }
+
+  try {
     history.replaceState(null, "", `#${name}`);
+  } catch {
+    // Navigation still works if history updates are unavailable.
   }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -680,12 +751,16 @@ function initializeNavigation() {
     });
   }
 
-  const hash = location.hash.replace("#", "");
+  const requestedView = location.hash.replace("#", "");
 
-  if (hash && $(`#${hash}View`)) {
-    showView(hash);
+  if ($(`#${requestedView}View`)) {
+    showView(requestedView);
+  } else {
+    showView("dashboard");
   }
 }
+
+/* -------------------- INITIALIZATION -------------------- */
 
 document.addEventListener("DOMContentLoaded", () => {
   initializeNavigation();
@@ -698,3 +773,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadDashboard();
 });
+```
