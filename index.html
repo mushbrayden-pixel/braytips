@@ -1,393 +1,632 @@
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#08111f">
-  <meta name="description" content="BrayTips football analytics, match predictions, odds analysis and performance tracking.">
-  <title>BrayTips | Football Intelligence</title>
+```javascript
+"use strict";
 
-  <!-- IMPORTANT: These filenames must match your actual files -->
-  <link rel="stylesheet" href="./styles.css">
-  <script src="./app.js" defer></script>
-</head>
+const BRAYTIPS_CONFIG = {
+  apiBase: "https://braytips-api.mushbrayden.workers.dev",
+  timezone: "Africa/Nairobi",
+  refreshInterval: 5 * 60 * 1000
+};
 
-<body>
-  <header class="app-header">
-    <a href="#home" class="brand" aria-label="BrayTips home">
-      <div class="brand-mark">B↗</div>
-      <div>
-        <div class="brand-name">BRAY<span>TIPS</span></div>
-        <div class="brand-tagline">SMART BETS. BETTER ODDS.</div>
-      </div>
-    </a>
+const dashboardState = {
+  matches: [],
+  predictions: [],
+  slips: [],
+  history: [],
+  lastUpdated: null
+};
 
-    <div class="header-right">
-      <div class="live-indicator">
-        <span class="live-dot"></span>
-        <span>Analytics dashboard</span>
-      </div>
-      <div class="header-date" id="header-date">Loading date...</div>
-      <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation" aria-expanded="false">☰</button>
-    </div>
-  </header>
+const $ = (selector) => document.querySelector(selector);
 
-  <div class="app-layout">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-label">Workspace</div>
+function safeText(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
 
-      <nav aria-label="Main navigation">
-        <a href="#home" class="nav-link active">
-          <span class="nav-icon">⌂</span> Dashboard
-        </a>
-        <a href="#odds-slips" class="nav-link">
-          <span class="nav-icon">◈</span> Odds Slips
-        </a>
-        <a href="#winner-teams" class="nav-link">
-          <span class="nav-icon">🏆</span> Winner Teams
-        </a>
-        <a href="#over-under" class="nav-link">
-          <span class="nav-icon">⚽</span> Over / Under
-        </a>
-      </nav>
+function formatDateTime(value) {
+  if (!value) return "Time unavailable";
 
-      <div class="sidebar-label">Analytics</div>
+  const date = new Date(value);
 
-      <nav aria-label="Analytics navigation">
-        <a href="#performance" class="nav-link">
-          <span class="nav-icon">▥</span> Performance
-        </a>
-        <a href="#history" class="nav-link">
-          <span class="nav-icon">◷</span> Previous 2 Days
-        </a>
-        <a href="#method" class="nav-link">
-          <span class="nav-icon">◎</span> Our Method
-        </a>
-      </nav>
+  if (Number.isNaN(date.getTime())) {
+    return "Time unavailable";
+  }
 
-      <div class="sidebar-note">
-        <span class="note-icon">✦</span>
-        <strong>Data-driven predictions</strong>
-        <p>Our goal is to evaluate fixtures using real match statistics, available odds and probability estimates—not guesses.</p>
-      </div>
-    </aside>
+  return new Intl.DateTimeFormat("en-KE", {
+    timeZone: BRAYTIPS_CONFIG.timezone,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  }).format(date);
+}
 
-    <main class="main-content" id="home">
-      <section class="page-heading">
-        <div>
-          <div class="eyebrow">Football intelligence platform</div>
-          <h1>Your Daily Dashboard</h1>
-          <p>Explore football predictions, compare odds and track settled results in one place.</p>
+function formatOdds(value) {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const odds = Number(value);
+
+  return Number.isFinite(odds) && odds > 1
+    ? odds.toFixed(2)
+    : "—";
+}
+
+function formatProbability(value) {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const probability = Number(value);
+
+  if (!Number.isFinite(probability)) return "—";
+
+  const percentage =
+    probability >= 0 && probability <= 1
+      ? probability * 100
+      : probability;
+
+  return percentage >= 0 && percentage <= 100
+    ? `${percentage.toFixed(1)}%`
+    : "—";
+}
+
+function normalizeResult(value) {
+  const result = String(value || "pending").toLowerCase();
+
+  if (["won", "win"].includes(result)) return "won";
+  if (["lost", "loss"].includes(result)) return "lost";
+  if (result === "void") return "void";
+
+  return "pending";
+}
+
+function resultBadge(value) {
+  const result = normalizeResult(value);
+  const labels = {
+    won: "Won",
+    lost: "Lost",
+    void: "Void",
+    pending: "Pending"
+  };
+
+  return `<span class="result-badge result-${result}">
+    ${labels[result]}
+  </span>`;
+}
+
+function updateConnection(message, status = "") {
+  const element = $("#connection-status");
+
+  if (!element) return;
+
+  element.textContent = message;
+  element.className = `connection-badge ${status}`.trim();
+}
+
+function getKenyaDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: BRAYTIPS_CONFIG.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+
+  const values = {};
+
+  parts.forEach((part) => {
+    values[part.type] = part.value;
+  });
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function getPreviousDateKeys(count = 2) {
+  const today = getKenyaDateKey();
+  const [year, month, day] = today.split("-").map(Number);
+  const base = new Date(Date.UTC(year, month - 1, day));
+  const dates = [];
+
+  for (let i = 1; i <= count; i++) {
+    const date = new Date(base);
+    date.setUTCDate(date.getUTCDate() - i);
+    dates.push(date.toISOString().slice(0, 10));
+  }
+
+  return dates;
+}
+
+function updateDateDisplay() {
+  const formatted = new Intl.DateTimeFormat("en-KE", {
+    timeZone: BRAYTIPS_CONFIG.timezone,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(new Date());
+
+  const element = $("#current-date");
+
+  if (element) element.textContent = formatted;
+}
+
+function renderFixtures() {
+  const container = $("#fixtures-list");
+  const count = $("#fixtures-count");
+  const note = $("#fixtures-note");
+
+  if (!container) return;
+
+  const fixtures = [...dashboardState.matches].sort((a, b) =>
+    String(a.kickoff_at || "").localeCompare(
+      String(b.kickoff_at || "")
+    )
+  );
+
+  if (count) count.textContent = String(fixtures.length);
+
+  if (note) {
+    note.textContent = `${fixtures.length} fixtures in database`;
+  }
+
+  if (!fixtures.length) {
+    container.innerHTML = `
+      <div class="empty-card">
+        <strong>No fixtures loaded</strong>
+        <p>
+          The database currently contains no fixtures. Run your
+          existing fixture import process before expecting matches here.
+        </p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = fixtures.slice(0, 18).map((match) => {
+    const status = String(match.match_status || "upcoming").toLowerCase();
+
+    const statusLabels = {
+      upcoming: "Upcoming",
+      live: "Live",
+      finished: "Finished",
+      postponed: "Postponed",
+      cancelled: "Cancelled"
+    };
+
+    const hasScore =
+      match.home_goals !== null &&
+      match.home_goals !== undefined &&
+      match.away_goals !== null &&
+      match.away_goals !== undefined;
+
+    const scoreHTML = hasScore
+      ? `<div class="fixture-time">
+           Score: ${safeText(match.home_goals)} – ${safeText(match.away_goals)}
+         </div>`
+      : "";
+
+    return `
+      <article class="fixture-card">
+        <div class="fixture-league">
+          ${safeText(match.league_name || "Competition")}
+          ${match.country ? ` · ${safeText(match.country)}` : ""}
         </div>
-        <div class="heading-date" id="dashboard-date">Kenya time · Loading...</div>
-      </section>
 
-      <section class="hero">
-        <div class="hero-content">
-          <div class="hero-badge">
-            <span>✦</span> THE BRAYTIPS EDGE
-          </div>
-          <h2>Make smarter decisions.<br><span>Follow the data.</span></h2>
+        <div class="fixture-teams">
+          ${safeText(match.home_team || "Home")}
+          <span>vs</span>
+          ${safeText(match.away_team || "Away")}
+        </div>
+
+        <div class="fixture-time">
+          ${safeText(formatDateTime(match.kickoff_at))}
+        </div>
+
+        ${scoreHTML}
+
+        <span class="fixture-status">
+          ${safeText(statusLabels[status] || status)}
+        </span>
+      </article>`;
+  }).join("");
+}
+
+function renderTeamPicks() {
+  const body = $("#team-picks-table");
+  const count = $("#predictions-count");
+
+  if (count) {
+    count.textContent = String(dashboardState.predictions.length);
+  }
+
+  if (!body) return;
+
+  const predictions = dashboardState.predictions.filter(
+    (item) => item.category !== "over_under"
+  );
+
+  if (!predictions.length) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty">
+          No published team picks are currently available.
+          Fixtures alone are not predictions.
+        </td>
+      </tr>`;
+    return;
+  }
+
+  body.innerHTML = predictions.map((item) => {
+    const match = item.matches || {};
+
+    const home = match.home_team || item.home_team || "—";
+    const away = match.away_team || item.away_team || "—";
+
+    return `
+      <tr>
+        <td class="match-name">
+          ${safeText(home)} vs ${safeText(away)}
+        </td>
+
+        <td>${safeText(match.league_name || item.league_name || "—")}</td>
+
+        <td>${safeText(item.selection || "—")}</td>
+
+        <td><span class="odds-badge">
+          ${formatOdds(item.decimal_odds)}
+        </span></td>
+
+        <td>${formatProbability(item.estimated_probability)}</td>
+
+        <td>${safeText(item.reasoning || "—")}</td>
+
+        <td>${resultBadge(item.result)}</td>
+      </tr>`;
+  }).join("");
+}
+
+function renderGoalMarkets() {
+  const body = $("#goals-table");
+
+  if (!body) return;
+
+  const predictions = dashboardState.predictions.filter(
+    (item) => item.category === "over_under"
+  );
+
+  if (!predictions.length) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty">
+          No saved Over/Under predictions are available yet.
+        </td>
+      </tr>`;
+    return;
+  }
+
+  body.innerHTML = predictions.map((item) => {
+    const match = item.matches || {};
+
+    return `
+      <tr>
+        <td class="match-name">
+          ${safeText(match.home_team || "—")} vs
+          ${safeText(match.away_team || "—")}
+        </td>
+
+        <td>${safeText(item.market || item.selection || "—")}</td>
+
+        <td><span class="odds-badge">
+          ${formatOdds(item.decimal_odds)}
+        </span></td>
+
+        <td>${formatProbability(item.estimated_probability)}</td>
+
+        <td>${safeText(item.reasoning || "—")}</td>
+      </tr>`;
+  }).join("");
+}
+
+function renderSlips() {
+  const slipDefinitions = [
+    { category: "odds_2", selector: "#slip-2", target: "2.00", title: "Conservative Slip" },
+    { category: "odds_5", selector: "#slip-5", target: "5.00", title: "Medium Odds Slip" },
+    { category: "odds_10", selector: "#slip-10", target: "10.00", title: "High Odds Slip" }
+  ];
+
+  slipDefinitions.forEach((definition) => {
+    const container = $(definition.selector);
+
+    if (!container) return;
+
+    const slip = dashboardState.slips.find(
+      (item) => item.category === definition.category
+    );
+
+    if (!slip) {
+      container.innerHTML = `
+        <div class="slip-top">
+          <strong>${definition.target}</strong>
+          <span>TARGET ODDS</span>
+        </div>
+
+        <h3>${definition.title}</h3>
+
+        <p>
+          No published slip is available. This section will update
+          when a slip is saved in the database.
+        </p>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="slip-top">
+        <strong>${definition.target}</strong>
+        <span>TARGET ODDS</span>
+      </div>
+
+      <h3>${definition.title}</h3>
+
+      <p>
+        Combined odds:
+        <strong>${formatOdds(slip.combined_odds)}</strong>
+      </p>
+
+      <p>
+        Date: ${safeText(String(slip.slip_date || "—").slice(0, 10))}
+      </p>
+
+      <p>${safeText(slip.reasoning || "Published slip")}</p>
+
+      ${resultBadge(slip.status)}`;
+  });
+}
+
+function calculatePerformance(records) {
+  const settled = records.filter((item) =>
+    ["won", "lost"].includes(normalizeResult(item.result))
+  );
+
+  const won = settled.filter(
+    (item) => normalizeResult(item.result) === "won"
+  ).length;
+
+  const lost = settled.length - won;
+
+  return {
+    won,
+    lost,
+    settled: settled.length,
+    accuracy: settled.length
+      ? Math.round((won / settled.length) * 1000) / 10
+      : 0
+  };
+}
+
+function renderPerformance() {
+  const allowedDates = getPreviousDateKeys(2);
+
+  const recentRecords = dashboardState.history.filter((item) => {
+    const date = String(
+      item.date ||
+      item.prediction_date ||
+      item.slip_date ||
+      ""
+    ).slice(0, 10);
+
+    return allowedDates.includes(date);
+  });
+
+  const performance = calculatePerformance(recentRecords);
+
+  if ($("#won-count")) {
+    $("#won-count").textContent = String(performance.won);
+  }
+
+  if ($("#lost-count")) {
+    $("#lost-count").textContent = String(performance.lost);
+  }
+
+  if ($("#settled-count")) {
+    $("#settled-count").textContent = String(performance.settled);
+  }
+
+  if ($("#recent-settled-count")) {
+    $("#recent-settled-count").textContent = String(performance.settled);
+  }
+
+  if ($("#accuracy-count")) {
+    $("#accuracy-count").textContent = `${performance.accuracy}%`;
+  }
+
+  if ($("#last-updated")) {
+    $("#last-updated").textContent = dashboardState.lastUpdated
+      ? formatDateTime(dashboardState.lastUpdated)
+      : "—";
+  }
+
+  const body = $("#history-table");
+
+  if (!body) return;
+
+  if (!recentRecords.length) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty">
+          No prediction results were recorded during the previous
+          two days. Pending predictions are not counted as wins or losses.
+        </td>
+      </tr>`;
+    return;
+  }
+
+  recentRecords.sort((a, b) => {
+    const dateA = String(a.date || a.prediction_date || a.slip_date || "");
+    const dateB = String(b.date || b.prediction_date || b.slip_date || "");
+    return dateB.localeCompare(dateA);
+  });
+
+  body.innerHTML = recentRecords.map((item) => {
+    const date = String(
+      item.date ||
+      item.prediction_date ||
+      item.slip_date ||
+      "—"
+    ).slice(0, 10);
+
+    const match = item.matches || {};
+
+    const matchName =
+      item.home_team && item.away_team
+        ? `${item.home_team} vs ${item.away_team}`
+        : match.home_team && match.away_team
+          ? `${match.home_team} vs ${match.away_team}`
+          : item.category && item.category.startsWith("odds_")
+            ? `${item.category.replace("odds_", "")}.00 odds slip`
+            : "—";
+
+    return `
+      <tr>
+        <td>${safeText(date)}</td>
+        <td>${safeText(matchName)}</td>
+        <td>${safeText(item.selection || item.category || "—")}</td>
+        <td>${formatOdds(item.decimal_odds ?? item.combined_odds)}</td>
+        <td>${resultBadge(item.result || item.status)}</td>
+      </tr>`;
+  }).join("");
+}
+
+async function loadDashboard() {
+  updateConnection("Connecting to BrayTips...");
+
+  try {
+    const response = await fetch(
+      `${BRAYTIPS_CONFIG.apiBase}/api/dashboard`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "no-store"
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Dashboard API returned HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || "The dashboard API returned an error.");
+    }
+
+    dashboardState.matches = Array.isArray(data.matches)
+      ? data.matches
+      : [];
+
+    dashboardState.predictions = Array.isArray(data.predictions)
+      ? data.predictions
+      : [];
+
+    dashboardState.slips = Array.isArray(data.slips)
+      ? data.slips
+      : [];
+
+    dashboardState.history = [
+      ...dashboardState.predictions.map((item) => ({
+        ...item,
+        date: item.prediction_date
+      })),
+      ...dashboardState.slips.map((item) => ({
+        ...item,
+        date: item.slip_date,
+        result: item.status
+      }))
+    ];
+
+    dashboardState.lastUpdated =
+      data.generatedAt || new Date().toISOString();
+
+    updateConnection("Connected to BrayTips API", "online");
+
+    renderFixtures();
+    renderTeamPicks();
+    renderGoalMarkets();
+    renderSlips();
+    renderPerformance();
+
+    console.log("BrayTips dashboard updated", {
+      fixtures: dashboardState.matches.length,
+      predictions: dashboardState.predictions.length,
+      slips: dashboardState.slips.length
+    });
+
+  } catch (error) {
+    console.error("BrayTips dashboard error:", error);
+    updateConnection("Connection error", "error");
+
+    const container = $("#fixtures-list");
+
+    if (container && !dashboardState.matches.length) {
+      container.innerHTML = `
+        <div class="empty-card">
+          <strong>Unable to load dashboard data</strong>
+          <p>${safeText(error.message)}</p>
           <p>
-            Analyse team form, head-to-head records, league standings and
-            available match statistics. Every selection should have a reason.
-            No outcome is guaranteed.
+            Check that the BrayTips Worker is deployed and its
+            /api/dashboard endpoint is working.
           </p>
-          <div class="hero-bottom">
-            <a href="#odds-slips" class="primary-button">Explore odds slips <span>→</span></a>
-            <a href="#method" class="secondary-button">How it works</a>
-          </div>
-        </div>
-      </section>
+        </div>`;
+    }
+  }
+}
 
-      <div class="notice" role="status">
-        <span class="notice-icon">ⓘ</span>
-        <div>
-          <strong>Data connection not configured yet.</strong>
-          <span>
-            This is the initial dashboard. Live fixtures, bookmaker odds and
-            automated predictions will appear after we connect the backend and
-            a verified data provider. No fictional selections are being displayed.
-          </span>
-        </div>
-      </div>
+function setupNavigation() {
+  const sidebar = $("#sidebar");
+  const toggle = $("#menu-toggle");
 
-      <section class="section" id="odds-slips">
-        <div class="section-heading">
-          <div>
-            <h2>Today's Odds Slips</h2>
-            <p>Target combined decimal odds for different risk levels.</p>
-          </div>
-          <span class="status-pill yellow">Awaiting live data</span>
-        </div>
+  document.querySelectorAll(".nav-link").forEach((link) => {
+    link.addEventListener("click", () => {
+      document.querySelectorAll(".nav-link").forEach((item) => {
+        item.classList.remove("active");
+      });
 
-        <div class="slip-grid">
-          <article class="slip-card">
-            <div class="slip-top">
-              <span class="slip-label">CONSERVATIVE TARGET</span>
-              <span class="slip-icon">◈</span>
-            </div>
-            <div class="slip-odds">2.00 <small>odds</small></div>
-            <div class="slip-footer">
-              <span>Lower target</span>
-              <span class="status-pill">Not generated</span>
-            </div>
-          </article>
+      link.classList.add("active");
 
-          <article class="slip-card">
-            <div class="slip-top">
-              <span class="slip-label">MEDIUM TARGET</span>
-              <span class="slip-icon">↗</span>
-            </div>
-            <div class="slip-odds">5.00 <small>odds</small></div>
-            <div class="slip-footer">
-              <span>More combined risk</span>
-              <span class="status-pill">Not generated</span>
-            </div>
-          </article>
+      if (sidebar) sidebar.classList.remove("open");
+    });
+  });
 
-          <article class="slip-card">
-            <div class="slip-top">
-              <span class="slip-label">HIGH TARGET</span>
-              <span class="slip-icon">✦</span>
-            </div>
-            <div class="slip-odds">10.00 <small>odds</small></div>
-            <div class="slip-footer">
-              <span>Higher variance</span>
-              <span class="status-pill">Not generated</span>
-            </div>
-          </article>
-        </div>
-      </section>
+  if (toggle && sidebar) {
+    toggle.addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+    });
+  }
+}
 
-      <section class="section" id="winner-teams">
-        <div class="section-heading">
-          <div>
-            <h2>Daily Winner Teams</h2>
-            <p>Up to three standalone team-win selections, when supported by the data.</p>
-          </div>
-        </div>
+function initializeBrayTips() {
+  updateDateDisplay();
+  setupNavigation();
+  loadDashboard();
 
-        <div class="quick-grid">
-          <article class="feature-card">
-            <div class="feature-icon">🏆</div>
-            <div>
-              <h3>Standalone Pick 01</h3>
-              <p>Waiting for verified fixtures and team analysis.</p>
-            </div>
-            <span class="feature-arrow">→</span>
-          </article>
+  setInterval(updateDateDisplay, 60 * 1000);
+  setInterval(loadDashboard, BRAYTIPS_CONFIG.refreshInterval);
+}
 
-          <article class="feature-card">
-            <div class="feature-icon">⚽</div>
-            <div>
-              <h3>Standalone Pick 02 & 03</h3>
-              <p>Selections will only be shown when the available evidence supports them.</p>
-            </div>
-            <span class="feature-arrow">→</span>
-          </article>
-        </div>
-      </section>
+window.BrayTips = {
+  loadDashboard,
+  calculatePerformance,
+  getState: () => structuredClone(dashboardState)
+};
 
-      <section class="section" id="over-under">
-        <div class="section-heading">
-          <div>
-            <h2>Over / Under Goals</h2>
-            <p>Goal-market analysis based on team scoring, conceding and match data.</p>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <h3>Goals Market Predictions</h3>
-              <p>Over 1.5 · Over 2.5 · Under 2.5 · Other supported markets</p>
-            </div>
-            <span class="status-pill">Awaiting data</span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Fixture</th>
-                  <th>Market</th>
-                  <th>Odds</th>
-                  <th>Probability</th>
-                  <th>Reason</th>
-                </tr>
-              </thead>
-              <tbody id="over-under-table">
-                <tr>
-                  <td colspan="5" class="empty-state">
-                    <strong>No verified goal-market predictions yet</strong>
-                    <span>Connect the football data provider to populate this table with real fixtures and available odds.</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="predictions">
-        <div class="section-heading">
-          <div>
-            <h2>Today's Match Analysis</h2>
-            <p>Fixtures, selected markets, odds and model probability estimates.</p>
-          </div>
-          <span class="status-pill">Data pending</span>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <h3>Prediction Board</h3>
-              <p>Only verified data should be published here.</p>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Fixture</th>
-                  <th>Competition</th>
-                  <th>Selection</th>
-                  <th>Odds</th>
-                  <th>Probability</th>
-                  <th>Analysis</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="predictions-table">
-                <tr>
-                  <td colspan="7" class="empty-state">
-                    <strong>Predictions will appear here</strong>
-                    <span>The backend and verified football data feed have not been connected yet.</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="performance">
-        <div class="section-heading">
-          <div>
-            <h2>Performance Overview</h2>
-            <p>Settled prediction results—not projected outcomes.</p>
-          </div>
-          <span class="status-pill">Last 2 days</span>
-        </div>
-
-        <div class="performance-grid">
-          <article class="stat-card">
-            <div class="stat-label">Settled Predictions</div>
-            <div class="stat-value" id="settled-count">0</div>
-            <div class="stat-caption">Wins and losses counted</div>
-          </article>
-
-          <article class="stat-card">
-            <div class="stat-label">Won</div>
-            <div class="stat-value" id="won-count">0</div>
-            <div class="stat-caption">Correct settled outcomes</div>
-          </article>
-
-          <article class="stat-card">
-            <div class="stat-label">Lost</div>
-            <div class="stat-value" id="lost-count">0</div>
-            <div class="stat-caption">Incorrect settled outcomes</div>
-          </article>
-
-          <article class="stat-card">
-            <div class="stat-label">Accuracy</div>
-            <div class="stat-value" id="accuracy-count">0%</div>
-            <div class="stat-caption">Wins ÷ settled predictions</div>
-          </article>
-        </div>
-      </section>
-
-      <section class="section" id="history">
-        <div class="section-heading">
-          <div>
-            <h2>Previous 2 Days</h2>
-            <p>Recent prediction history and verified final outcomes.</p>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <h3>Recent Results</h3>
-              <p>Only the previous two days of history are displayed here.</p>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Fixture</th>
-                  <th>Selection</th>
-                  <th>Odds at publication</th>
-                  <th>Result</th>
-                </tr>
-              </thead>
-              <tbody id="history-table">
-                <tr>
-                  <td colspan="5" class="empty-state">
-                    <strong>No recorded results yet</strong>
-                    <span>Historical performance will appear after predictions have been published and matches settled.</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="method">
-        <div class="section-heading">
-          <div>
-            <h2>How BrayTips Works</h2>
-            <p>A transparent approach to evaluating football markets.</p>
-          </div>
-        </div>
-
-        <div class="method-grid">
-          <article class="method-card">
-            <div class="method-number">01</div>
-            <h3>Collect verified data</h3>
-            <p>Retrieve fixtures, recent form, head-to-head results, league positions and available match statistics from configured data sources.</p>
-          </article>
-
-          <article class="method-card">
-            <div class="method-number">02</div>
-            <h3>Evaluate probabilities</h3>
-            <p>Estimate outcomes from the available evidence, compare them with bookmaker odds and explain the factors behind each selection.</p>
-          </article>
-
-          <article class="method-card">
-            <div class="method-number">03</div>
-            <h3>Track every result</h3>
-            <p>Save predictions and publication-time odds, record final outcomes, and calculate accuracy using settled wins and losses.</p>
-          </article>
-        </div>
-      </section>
-
-      <footer class="footer">
-        <div>
-          <strong>BRAYTIPS</strong><br>
-          Smart bets. Better odds.
-        </div>
-        <div class="disclaimer">
-          Football predictions are uncertain and betting can result in financial loss.
-          No selection is guaranteed. Only bet what you can afford to lose.
-        </div>
-      </footer>
-    </main>
-  </div>
-</body>
-</html>
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initializeBrayTips);
+} else {
+  initializeBrayTips();
+}
 ```
