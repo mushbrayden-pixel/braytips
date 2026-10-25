@@ -1,913 +1,559 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BrayTips | Admin Dashboard</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BrayTips Admin</title>
 <style>
-:root {
-  --navy: #10233f;
-  --blue: #246bfd;
-  --pale: #f3f7ff;
-  --white: #fff;
-  --text: #182230;
-  --muted: #667085;
-  --border: #dfe5ee;
-  --green: #16804a;
-  --red: #c62828;
-  --orange: #b45309;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: #f4f7fb;
-  color: var(--text);
-  font-family: Arial, sans-serif;
-}
-header {
-  background: var(--navy);
-  color: white;
-  padding: 22px 16px;
-}
-.header-inner, main {
-  width: min(1200px, 94%);
-  margin: auto;
-}
-header h1 { margin: 0 0 5px; }
-header p { margin: 0; color: #d6e2f5; }
-main { padding: 24px 0 50px; }
-.card {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 3px 12px #10233f08;
-}
-h2 { margin: 0 0 16px; font-size: 21px; }
-h3 { margin: 0 0 12px; font-size: 17px; }
-p { line-height: 1.5; }
-.muted { color: var(--muted); }
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-.stat {
-  background: var(--pale);
-  border: 1px solid #e2eaff;
-  border-radius: 10px;
-  padding: 16px;
-}
-.stat strong {
-  display: block;
-  font-size: 28px;
-  color: var(--navy);
-  margin-top: 8px;
-}
-.row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-.field { margin-bottom: 14px; }
-label {
-  display: block;
-  font-weight: 700;
-  font-size: 13px;
-  margin-bottom: 6px;
-}
-input, select, textarea {
-  width: 100%;
-  border: 1px solid #cfd7e3;
-  border-radius: 8px;
-  padding: 11px;
-  font: inherit;
-  background: white;
-  color: var(--text);
-}
-textarea { min-height: 90px; resize: vertical; }
-button {
-  border: 0;
-  border-radius: 8px;
-  padding: 11px 15px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-}
-button:disabled { opacity: .55; cursor: not-allowed; }
-.btn-primary { background: var(--blue); color: white; }
-.btn-dark { background: var(--navy); color: white; }
-.btn-light { background: #edf2f8; color: var(--navy); }
-.btn-green { background: #e5f7ed; color: #126b3d; }
-.btn-red { background: #ffebeb; color: #a51d1d; }
-.actions {
-  display: flex;
-  gap: 9px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.notice {
-  display: none;
-  border-radius: 8px;
-  padding: 12px;
-  margin: 12px 0;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-.notice.show { display: block; }
-.notice.success { background: #e8f7ee; color: #146c3b; }
-.notice.error { background: #ffeded; color: #a51d1d; }
-.notice.info { background: #eaf1ff; color: #1749a2; }
-.checkbox {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-weight: 400;
-}
-.checkbox input { width: auto; }
-.table-wrap { overflow-x: auto; }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 700px;
-}
-th, td {
-  border-bottom: 1px solid var(--border);
-  padding: 11px 9px;
-  text-align: left;
-  vertical-align: top;
-  font-size: 13px;
-}
-th { background: #f7f9fc; }
-td .actions { gap: 5px; }
-td button { padding: 7px 9px; font-size: 12px; }
-.badge {
-  display: inline-block;
-  border-radius: 20px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  background: #edf2f8;
-}
-.badge.green { background: #e1f6e9; color: #116b39; }
-.badge.orange { background: #fff1d6; color: #8a5100; }
-.hidden { display: none !important; }
-small { color: var(--muted); }
-@media(max-width:700px) {
-  .grid { grid-template-columns: 1fr; }
-  .row { grid-template-columns: 1fr; }
-  .card { padding: 15px; }
-  .actions button { flex: 1 1 auto; }
-}
+:root{--navy:#10233f;--blue:#246bfd;--pale:#f3f7ff;--border:#dce5f1;--muted:#61718a}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f8fc;color:#172b4d;font:15px/1.45 system-ui,Arial,sans-serif}
+header{background:var(--navy);color:white;padding:20px}
+header h1{margin:0;font-size:24px}
+header p{margin:4px 0 0;color:#d7e3f6}
+main{max-width:1100px;margin:22px auto;padding:0 14px}
+.panel{background:white;border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px}
+h2{font-size:19px;margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.wide{grid-column:1/-1}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:5px}
+input,select,textarea{width:100%;min-width:0;border:1px solid #c7d2e3;border-radius:8px;padding:10px;font:inherit;background:white;color:#172b4d}
+textarea{min-height:80px;resize:vertical}
+button{border:0;border-radius:8px;padding:10px 14px;background:var(--blue);color:white;font-weight:700;cursor:pointer}
+button.secondary{background:#eaf0f8;color:#203650}
+button.danger{background:#b42318}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.muted{color:var(--muted);font-size:13px}
+.message{padding:10px;border-radius:8px;background:#eef4ff;margin:12px 0;overflow-wrap:anywhere}
+.hidden{display:none!important}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:9px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:#f5f8fc}
+.tablewrap{overflow:auto}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{background:#f4f7fc;border-radius:10px;padding:12px}
+.stat strong{display:block;font-size:22px}
+.pill{display:inline-block;background:#eaf0f8;border-radius:999px;padding:3px 8px;font-size:12px}
+.fixture{display:flex;align-items:center;gap:8px}
+.badge{width:26px;height:26px;object-fit:contain;flex:0 0 26px}
+.selection-row{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;align-items:end;margin:10px 0}
+@media(max-width:650px){.grid,.cards{grid-template-columns:1fr}.wide{grid-column:auto}.selection-row{grid-template-columns:1fr 100px}.selection-row button{grid-column:1/-1}}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="header-inner">
-    <h1>BrayTips Admin</h1>
-    <p>Manage fixtures, predictions, publishing and results.</p>
-  </div>
+<h1>BrayTips Admin</h1>
+<p>Manage predictions, betting slips and performance.</p>
 </header>
 
 <main>
-  <section id="loginCard" class="card">
-    <h2>Administrator login</h2>
-    <p class="muted">Enter your existing BrayTips admin trigger token.</p>
+<section class="panel" id="loginPanel">
+<h2>Admin access</h2>
+<label for="token">Admin trigger token</label>
+<input id="token" type="password" autocomplete="current-password">
+<div class="actions"><button id="connect">Connect</button></div>
+</section>
 
-    <form id="loginForm">
-      <div class="field">
-        <label for="adminToken">Admin token</label>
-        <input id="adminToken" type="password" autocomplete="current-password" required>
-      </div>
-      <button class="btn-primary" type="submit" id="loginButton">Sign in</button>
-    </form>
-    <div id="loginStatus" class="notice" role="status" aria-live="polite"></div>
-  </section>
+<div id="app" class="hidden">
+<div id="message" class="message" aria-live="polite">Connected.</div>
 
-  <div id="adminPanel" class="hidden">
-    <section class="card">
-      <div class="actions" style="justify-content:space-between">
-        <div>
-          <h2 style="margin-bottom:5px">Dashboard</h2>
-          <p class="muted" style="margin-top:0">BrayTips automation and prediction management.</p>
-        </div>
-        <button id="logoutButton" class="btn-light" type="button">Log out</button>
-      </div>
+<section class="panel">
+<h2>Dashboard</h2>
+<div class="cards" id="stats"></div>
+<div class="actions">
+<button id="refresh" class="secondary">Refresh data</button>
+<button id="import" class="secondary">Import fixtures</button>
+<button id="enrich" class="secondary">Enrich next fixture</button>
+<button id="generate" class="secondary">Generate draft predictions</button>
+</div>
+</section>
 
-      <div id="pageStatus" class="notice" role="status" aria-live="polite"></div>
+<section class="panel">
+<h2>Create or edit prediction</h2>
+<form id="predictionForm">
+<input type="hidden" id="predictionId">
+<div class="grid">
+<div class="wide">
+<label for="match">Fixture</label>
+<select id="match"><option value="">Choose fixture</option></select>
+</div>
+<div>
+<label for="date">Prediction date</label>
+<input id="date" type="date" required>
+</div>
+<div>
+<label for="category">Category</label>
+<select id="category">
+<option value="winner_team">Match result</option>
+<option value="over_under">Over/Under</option>
+<option value="other">Other</option>
+</select>
+</div>
+<div>
+<label for="market">Market</label>
+<select id="market">
+<option>1X2</option>
+<option>Double chance</option>
+<option>Draw no bet</option>
+<option>Over/Under 1.5</option>
+<option>Over/Under 2.5</option>
+<option>Over/Under 3.5</option>
+<option>Both teams to score</option>
+<option>Team goals</option>
+<option>Other</option>
+</select>
+</div>
+<div>
+<label for="selection">Selection</label>
+<input id="selection" required placeholder="e.g. Over 2.5 goals">
+</div>
+<div>
+<label for="odds">Bookmaker odds</label>
+<input id="odds" type="number" min="1.01" step="0.01" placeholder="e.g. 1.85">
+</div>
+<div>
+<label for="bookmaker">Bookmaker</label>
+<input id="bookmaker" placeholder="e.g. Betika">
+</div>
+<div>
+<label for="probability">Estimated probability (%)</label>
+<input id="probability" type="number" min="0" max="100" step="0.1">
+</div>
+<div>
+<label for="confidence">Confidence</label>
+<select id="confidence">
+<option>Medium</option><option>High</option><option>Low</option>
+</select>
+</div>
+<div>
+<label for="result">Result</label>
+<select id="result">
+<option value="pending">Pending</option>
+<option value="won">Won</option>
+<option value="lost">Lost</option>
+<option value="void">Void</option>
+</select>
+</div>
+<div class="wide">
+<label for="reasoning">Analysis / notes</label>
+<textarea id="reasoning"></textarea>
+</div>
+<div class="wide">
+<label><input id="publishPrediction" type="checkbox" style="width:auto"> Publish prediction</label>
+</div>
+</div>
+<div class="actions">
+<button type="submit">Save prediction</button>
+<button type="button" id="clearPrediction" class="secondary">Clear</button>
+</div>
+</form>
+</section>
 
-      <div class="grid">
-        <div class="stat">
-          Total fixtures
-          <strong id="fixtureCount">0</strong>
-        </div>
-        <div class="stat">
-          Total predictions
-          <strong id="predictionCount">0</strong>
-        </div>
-        <div class="stat">
-          Published predictions
-          <strong id="publishedCount">0</strong>
-        </div>
-      </div>
+<section class="panel">
+<h2>Build a slip</h2>
+<p class="muted">Add saved predictions, confirm the actual odds, and calculate the combined price. Target odds are guides; the actual combined odds depend on your selections.</p>
 
-      <h3 style="margin-top:22px">Automation controls</h3>
-      <p class="muted">
-        Enrichment fetches supporting team data. Prediction generation uses
-        saved data and creates draft predictions. Review them before publishing.
-        API-Football requests are limited, so run enrichment sparingly.
-      </p>
+<div class="grid">
+<div>
+<label for="slipCategory">Slip category</label>
+<select id="slipCategory">
+<option value="2_odds">2 odds</option>
+<option value="5_odds">5 odds</option>
+<option value="10_odds">10 odds</option>
+<option value="over_under">Over/Under</option>
+</select>
+</div>
+<div>
+<label for="slipDate">Slip date</label>
+<input id="slipDate" type="date">
+</div>
+<div>
+<label for="slipTitle">Slip title</label>
+<input id="slipTitle" placeholder="Daily picks">
+</div>
+<div>
+<label for="slipBookmaker">Bookmaker</label>
+<input id="slipBookmaker" placeholder="Bookmaker checked">
+</div>
+<div class="wide">
+<label for="slipNotes">Notes</label>
+<input id="slipNotes" placeholder="Odds checked at 09:15 EAT">
+</div>
+</div>
 
-      <div class="actions">
-        <button class="btn-dark" id="enrichButton" type="button">Enrich Match Data</button>
-        <button class="btn-primary" id="generateButton" type="button">Generate Predictions</button>
-        <button class="btn-light" id="refreshButton" type="button">Refresh Data</button>
-      </div>
+<div style="margin-top:14px">
+<label for="predictionPicker">Add saved prediction</label>
+<select id="predictionPicker"><option value="">Select prediction</option></select>
+<div class="actions"><button type="button" id="addSelection">Add selection</button></div>
+</div>
 
-      <div id="automationStatus" class="notice" role="status" aria-live="polite"></div>
-    </section>
+<div id="slipSelections"></div>
+<div class="message">
+<strong>Combined odds: <span id="combinedOdds">—</span></strong>
+<span id="targetNote" class="muted"></span>
+</div>
+<div class="actions">
+<button type="button" id="saveSlip">Save draft</button>
+<button type="button" id="publishSlip">Publish slip</button>
+<button type="button" id="clearSlip" class="secondary">Clear slip</button>
+</div>
+</section>
 
-    <section class="card">
-      <h2 id="formTitle">Create prediction</h2>
-      <p class="muted">Save a prediction and review it before publishing.</p>
+<section class="panel">
+<h2>Predictions</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Fixture / selection</th><th>Market</th><th>Odds</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody id="predictionsTable"></tbody>
+</table>
+</div>
+</section>
 
-      <form id="predictionForm">
-        <input type="hidden" id="predictionId">
+<section class="panel">
+<h2>Saved slips</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Slip</th><th>Combined odds</th><th>Status</th><th>Published</th><th>Actions</th></tr></thead>
+<tbody id="slipsTable"></tbody>
+</table>
+</div>
+</section>
 
-        <div class="field">
-          <label for="matchId">Fixture</label>
-          <select id="matchId">
-            <option value="">No linked fixture</option>
-          </select>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label for="predictionDate">Prediction date</label>
-            <input id="predictionDate" type="date" required>
-          </div>
-          <div class="field">
-            <label for="category">Category</label>
-            <select id="category" required>
-              <option value="2_odds">2 Odds</option>
-              <option value="5_odds">5 Odds</option>
-              <option value="10_odds">10 Odds</option>
-              <option value="over_under">Over/Under</option>
-              <option value="daily_3_team">Daily 3-Team</option>
-              <option value="single">Single Prediction</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label for="market">Market</label>
-            <select id="market" required>
-              <option value="1x2">Match Result (1X2)</option>
-              <option value="double_chance">Double Chance</option>
-              <option value="draw_no_bet">Draw No Bet</option>
-              <option value="over_under">Over/Under Goals</option>
-              <option value="btts">Both Teams To Score</option>
-              <option value="team_goals">Team Goals</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="selection">Selection</label>
-            <input id="selection" required placeholder="e.g. Home win or Over 1.5 goals">
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label for="odds">Decimal odds</label>
-            <input id="odds" type="number" min="1.01" max="1000" step="0.01" required placeholder="e.g. 1.85">
-          </div>
-          <div class="field">
-            <label for="probability">Estimated probability (%)</label>
-            <input id="probability" type="number" min="1" max="99" step="1" placeholder="e.g. 65">
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label for="confidence">Confidence</label>
-            <select id="confidence">
-              <option value="low">Low</option>
-              <option value="medium" selected>Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="result">Result</label>
-            <select id="result">
-              <option value="pending">Pending</option>
-              <option value="won">Won</option>
-              <option value="lost">Lost</option>
-              <option value="void">Void</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="reasoning">Reasoning / analysis</label>
-          <textarea id="reasoning" placeholder="Explain the supporting form, statistics and reasoning."></textarea>
-        </div>
-
-        <label class="checkbox field">
-          <input id="published" type="checkbox">
-          Publish this prediction immediately
-        </label>
-
-        <div class="actions">
-          <button class="btn-primary" type="submit" id="saveButton">Save prediction</button>
-          <button class="btn-light" type="button" id="cancelEditButton">Clear form</button>
-        </div>
-      </form>
-
-      <div id="formStatus" class="notice" role="status" aria-live="polite"></div>
-    </section>
-
-    <section class="card">
-      <h2>Manage predictions</h2>
-      <div class="actions" style="margin-bottom:12px">
-        <select id="predictionFilter" aria-label="Filter predictions" style="max-width:240px">
-          <option value="all">All predictions</option>
-          <option value="published">Published</option>
-          <option value="draft">Drafts</option>
-          <option value="pending">Pending results</option>
-        </select>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Fixture</th>
-              <th>Market / Selection</th>
-              <th>Odds</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Result</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="predictionsTable">
-            <tr><td colspan="7">Sign in to load predictions.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Available fixtures</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Date / Time</th>
-              <th>Fixture</th>
-              <th>League</th>
-              <th>Saved team data</th>
-            </tr>
-          </thead>
-          <tbody id="fixturesTable">
-            <tr><td colspan="4">No fixtures loaded.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+<section class="panel">
+<h2>Performance tracker</h2>
+<div id="performance"></div>
+</section>
+</div>
 </main>
 
 <script>
 (() => {
-  "use strict";
+"use strict";
 
-  const API_BASE = "https://braytips-api.mushbrayden.workers.dev";
+const API = "https://braytips-api.mushbrayden.workers.dev";
+const $ = id => document.getElementById(id);
+let data = {matches:[],predictions:[],slips:[],selections:[]};
+let slipItems = [];
 
-  const $ = id => document.getElementById(id);
-
-  let adminToken = "";
-  let matches = [];
-  let predictions = [];
-  let busy = false;
-
-  function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
-  }
-
-  function notify(id, message, type = "info") {
-    const el = $(id);
-    if (!el) return;
-    el.textContent = message;
-    el.className = "notice show " + type;
-  }
-
-  function clearNotice(id) {
-    const el = $(id);
-    if (el) {
-      el.textContent = "";
-      el.className = "notice";
+function token(){return $("token").value.trim();}
+function say(message,bad=false){
+  $("message").textContent=message;
+  $("message").style.background=bad?"#fff0f0":"#eef4ff";
+}
+function escapeHtml(value){
+  return String(value??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+function today(){
+  return new Intl.DateTimeFormat("en-CA",{
+    timeZone:"Africa/Nairobi",
+    year:"numeric",month:"2-digit",day:"2-digit"
+  }).format(new Date());
+}
+async function api(path,options={}){
+  const response=await fetch(API+path,{
+    ...options,
+    headers:{
+      "Content-Type":"application/json",
+      "x-admin-token":token(),
+      ...(options.headers||{})
     }
+  });
+  const raw=await response.text();
+  let result;
+  try{result=raw?JSON.parse(raw):{};}
+  catch{throw new Error("The server returned an invalid response.");}
+  if(!response.ok||result.success===false){
+    throw new Error(result.error||`Request failed (${response.status}).`);
   }
+  return result;
+}
+function fixtureLabel(m){
+  return `${m.home_team||"Home"} vs ${m.away_team||"Away"} · ${m.league||""} · ${String(m.kickoff_at||"").replace("T"," ").slice(0,16)}`;
+}
+function fixture(id){return data.matches.find(m=>String(m.id)===String(id));}
+function prediction(id){return data.predictions.find(p=>String(p.id)===String(id));}
 
-  async function api(path, options = {}) {
-    const headers = new Headers(options.headers || {});
-    headers.set("x-admin-token", adminToken);
-    headers.set("Accept", "application/json");
+async function refresh(){
+  const result=await api("/api/admin/data");
+  data={
+    matches:result.matches||[],
+    predictions:result.predictions||[],
+    slips:result.slips||[],
+    selections:result.selections||[]
+  };
+  renderAll();
+  await renderPerformance();
+}
+function renderAll(){
+  $("match").innerHTML='<option value="">Choose fixture</option>'+
+    data.matches.map(m=>`<option value="${escapeHtml(m.id)}">${escapeHtml(fixtureLabel(m))}</option>`).join("");
 
-    if (options.body !== undefined) {
-      headers.set("Content-Type", "application/json");
-    }
-
-    const response = await fetch(API_BASE + path, {
-      ...options,
-      headers
-    });
-
-    const raw = await response.text();
-    let data;
-
-    try {
-      data = raw ? JSON.parse(raw) : {};
-    } catch {
-      throw new Error("The server returned an unreadable response.");
-    }
-
-    if (!response.ok || data.success === false) {
-      throw new Error(data.error || data.message || `Request failed (${response.status}).`);
-    }
-
-    return data;
-  }
-
-  function fixtureName(match) {
-    const home = match.home_team || match.home_name || match.homeTeam || "Home team";
-    const away = match.away_team || match.away_name || match.awayTeam || "Away team";
-    return `${home} vs ${away}`;
-  }
-
-  function matchId(match) {
-    return String(match.id ?? match.match_id ?? "");
-  }
-
-  function predictionMatchId(prediction) {
-    return String(prediction.match_id ?? prediction.fixture_id ?? "");
-  }
-
-  function getFixture(id) {
-    return matches.find(match => matchId(match) === String(id));
-  }
-
-  function predictionFixtureName(prediction) {
-    const fixture = getFixture(predictionMatchId(prediction));
-    if (fixture) return fixtureName(fixture);
-
-    return prediction.fixture_name ||
-      prediction.match_name ||
-      prediction.fixture ||
-      "Unlinked prediction";
-  }
-
-  function formatDate(value) {
-    if (!value) return "—";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return String(value);
-    return date.toLocaleString("en-KE", {
-      timeZone: "Africa/Nairobi",
-      dateStyle: "medium",
-      timeStyle: "short"
-    });
-  }
-
-  function setBusy(button, isBusy, busyText, originalText) {
-    button.disabled = isBusy;
-    button.textContent = isBusy ? busyText : originalText;
-  }
-
-  async function loadAdminData() {
-    clearNotice("pageStatus");
-
-    const data = await api("/api/admin/data");
-
-    const payload = data.data || data;
-    matches = Array.isArray(payload.matches) ? payload.matches : [];
-    predictions = Array.isArray(payload.predictions) ? payload.predictions : [];
-
-    $("fixtureCount").textContent = matches.length;
-    $("predictionCount").textContent = predictions.length;
-    $("publishedCount").textContent = predictions.filter(p =>
-      p.published === true || p.is_published === true
-    ).length;
-
-    renderFixtureOptions();
-    renderFixtures();
-    renderPredictions();
-  }
-
-  function renderFixtureOptions() {
-    const select = $("matchId");
-    const currentValue = select.value;
-
-    select.innerHTML =
-      '<option value="">No linked fixture</option>' +
-      matches.map(match => `
-        <option value="${escapeHTML(matchId(match))}">
-          ${escapeHTML(fixtureName(match))} — ${escapeHTML(match.league_name || match.league || "")}
-        </option>
-      `).join("");
-
-    if (matches.some(match => matchId(match) === currentValue)) {
-      select.value = currentValue;
-    }
-  }
-
-  function renderFixtures() {
-    const tbody = $("fixturesTable");
-
-    if (!matches.length) {
-      tbody.innerHTML = '<tr><td colspan="4">No fixtures found.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = matches.map(match => {
-      const hasData = !!(
-        match.home_form ||
-        match.away_form ||
-        match.home_position != null ||
-        match.away_position != null
-      );
-
-      const savedData = hasData
-        ? `Home form: ${escapeHTML(match.home_form || "—")}<br>
-           Away form: ${escapeHTML(match.away_form || "—")}<br>
-           Positions: ${escapeHTML(match.home_position ?? "—")} / ${escapeHTML(match.away_position ?? "—")}`
-        : '<span class="badge orange">Needs enrichment</span>';
-
-      return `
-        <tr>
-          <td>${escapeHTML(formatDate(match.kickoff || match.match_date || match.date))}</td>
-          <td><strong>${escapeHTML(fixtureName(match))}</strong></td>
-          <td>${escapeHTML(match.league_name || match.league || "—")}</td>
-          <td>${savedData}</td>
-        </tr>
-      `;
+  $("predictionPicker").innerHTML='<option value="">Select prediction</option>'+
+    data.predictions.map(p=>{
+      const m=fixture(p.match_id);
+      return `<option value="${escapeHtml(p.id)}">${escapeHtml(m?fixtureLabel(m):p.market)} — ${escapeHtml(p.selection)}${p.decimal_odds?` @ ${Number(p.decimal_odds).toFixed(2)}`:" — odds needed"}</option>`;
     }).join("");
+
+  const publishedPredictions=data.predictions.filter(p=>p.is_published).length;
+  const publishedSlips=data.slips.filter(s=>s.is_published).length;
+
+  $("stats").innerHTML=[
+    ["Fixtures",data.matches.length],
+    ["Predictions",data.predictions.length],
+    ["Published picks",publishedPredictions],
+    ["Published slips",publishedSlips]
+  ].map(s=>`<div class="stat"><strong>${s[1]}</strong><span class="muted">${s[0]}</span></div>`).join("");
+
+  $("predictionsTable").innerHTML=data.predictions.map(p=>{
+    const m=fixture(p.match_id);
+    const name=m?fixtureLabel(m):"Standalone pick";
+    return `<tr>
+      <td><div class="fixture">
+      ${m?.home_logo?`<img class="badge" src="${escapeHtml(m.home_logo)}" alt="">`:""}
+      <div><strong>${escapeHtml(name)}</strong><br>${escapeHtml(p.selection)}</div>
+      ${m?.away_logo?`<img class="badge" src="${escapeHtml(m.away_logo)}" alt="">`:""}
+      </div></td>
+      <td>${escapeHtml(p.market||p.category||"")}</td>
+      <td>${p.decimal_odds?Number(p.decimal_odds).toFixed(2):"—"}<br><span class="muted">${escapeHtml(p.bookmaker||"")}</span></td>
+      <td><span class="pill">${p.is_published?"Published":"Draft"} · ${escapeHtml(p.result||"pending")}</span></td>
+      <td><div class="actions">
+      <button class="secondary" data-edit="${escapeHtml(p.id)}">Edit</button>
+      <button class="secondary" data-toggle="${escapeHtml(p.id)}">${p.is_published?"Unpublish":"Publish"}</button>
+      <button class="secondary" data-settle="${escapeHtml(p.id)}" data-result="won">Won</button>
+      <button class="secondary" data-settle="${escapeHtml(p.id)}" data-result="lost">Lost</button>
+      <button class="secondary" data-settle="${escapeHtml(p.id)}" data-result="void">Void</button>
+      <button class="danger" data-delete="${escapeHtml(p.id)}">Delete</button>
+      </div></td></tr>`;
+  }).join("")||'<tr><td colspan="5">No predictions saved.</td></tr>';
+
+  $("slipsTable").innerHTML=data.slips.map(s=>`
+    <tr>
+    <td><strong>${escapeHtml(s.title||s.category||"Slip")}</strong><br><span class="muted">${escapeHtml(s.slip_date||"")}</span></td>
+    <td>${Number(s.combined_odds||0).toFixed(2)}</td>
+    <td>${escapeHtml(s.status||"pending")}</td>
+    <td>${s.is_published?"Yes":"No"}</td>
+    <td><div class="actions">
+    <button class="secondary" data-slip-toggle="${escapeHtml(s.id)}">${s.is_published?"Unpublish":"Publish"}</button>
+    <button class="secondary" data-slip-settle="${escapeHtml(s.id)}" data-status="won">Won</button>
+    <button class="secondary" data-slip-settle="${escapeHtml(s.id)}" data-status="lost">Lost</button>
+    <button class="secondary" data-slip-settle="${escapeHtml(s.id)}" data-status="void">Void</button>
+    <button class="danger" data-slip-delete="${escapeHtml(s.id)}">Delete</button>
+    </div></td></tr>
+  `).join("")||'<tr><td colspan="5">No slips saved.</td></tr>';
+
+  renderSlipItems();
+}
+async function renderPerformance(){
+  try{
+    const result=await fetch(API+"/api/performance");
+    const body=await result.json();
+    const p=body.predictions||{},s=body.slips||{};
+    $("performance").innerHTML=`<div class="cards">
+      <div class="stat"><strong>${p.win_rate==null?"—":p.win_rate+"%"}</strong><span class="muted">Pick win rate</span></div>
+      <div class="stat"><strong>${p.settled??0}</strong><span class="muted">Settled picks</span></div>
+      <div class="stat"><strong>${s.win_rate==null?"—":s.win_rate+"%"}</strong><span class="muted">Slip win rate</span></div>
+      <div class="stat"><strong>${s.settled??0}</strong><span class="muted">Settled slips</span></div>
+    </div>`;
+  }catch(e){$("performance").textContent="Performance data unavailable.";}
+}
+function clearPrediction(){
+  $("predictionForm").reset();
+  $("predictionId").value="";
+  $("date").value=today();
+  $("result").value="pending";
+}
+function editPrediction(id){
+  const p=prediction(id);
+  if(!p)return;
+  $("predictionId").value=p.id;
+  $("match").value=p.match_id||"";
+  $("date").value=p.prediction_date||today();
+  $("category").value=p.category||"winner_team";
+  $("market").value=p.market||"Other";
+  $("selection").value=p.selection||"";
+  $("odds").value=p.decimal_odds??"";
+  $("bookmaker").value=p.bookmaker||"";
+  $("probability").value=p.estimated_probability==null?"":Number(p.estimated_probability)*100;
+  $("confidence").value=p.confidence_label||"Medium";
+  $("result").value=p.result||"pending";
+  $("reasoning").value=p.reasoning||"";
+  $("publishPrediction").checked=!!p.is_published;
+  $("predictionForm").scrollIntoView({behavior:"smooth"});
+}
+function renderSlipItems(){
+  $("slipSelections").innerHTML=slipItems.map((item,i)=>{
+    const p=prediction(item.id);
+    const m=p?fixture(p.match_id):null;
+    return `<div class="selection-row">
+      <div><strong>${escapeHtml(m?fixtureLabel(m):p?.market||"Selection")}</strong><br><span class="muted">${escapeHtml(p?.selection||"")}</span></div>
+      <div><label for="slipOdd${i}">Odds</label><input id="slipOdd${i}" type="number" min="1.01" step="0.01" value="${escapeHtml(item.odds??"")}" data-odd-index="${i}"></div>
+      <button type="button" class="danger" data-remove-index="${i}">Remove</button>
+    </div>`;
+  }).join("");
+
+  const odds=slipItems.map(x=>Number(x.odds));
+  const valid=odds.length>0&&odds.every(x=>Number.isFinite(x)&&x>1);
+  const combined=valid?odds.reduce((a,b)=>a*b,1):null;
+  $("combinedOdds").textContent=combined===null?"—":combined.toFixed(2);
+
+  const category=$("slipCategory").value;
+  const target={"2_odds":2,"5_odds":5,"10_odds":10}[category];
+  $("targetNote").textContent=target?`Target ${target.toFixed(2)}; actual odds may differ.`:"";
+}
+function clearSlip(){slipItems=[];renderSlipItems();}
+async function saveSlip(publish){
+  if(!slipItems.length)throw new Error("Add a selection first.");
+  const odds={};
+  for(const item of slipItems){
+    const n=Number(item.odds);
+    if(!Number.isFinite(n)||n<=1)throw new Error("Enter valid odds for every selection.");
+    odds[item.id]=n;
   }
 
-  function renderPredictions() {
-    const tbody = $("predictionsTable");
-    const filter = $("predictionFilter").value;
+  const result=await api("/api/admin/slips",{
+    method:"POST",
+    body:JSON.stringify({
+      category:$("slipCategory").value,
+      slip_date:$("slipDate").value||today(),
+      title:$("slipTitle").value,
+      bookmaker:$("slipBookmaker").value,
+      notes:$("slipNotes").value,
+      prediction_ids:slipItems.map(x=>x.id),
+      selection_odds:odds,
+      is_published:publish
+    })
+  });
 
-    let list = [...predictions];
+  say(`${publish?"Published":"Saved draft"} — combined odds ${Number(result.combined_odds).toFixed(2)}.`);
+  clearSlip();
+  await refresh();
+}
 
-    if (filter === "published") {
-      list = list.filter(p => p.published === true || p.is_published === true);
-    } else if (filter === "draft") {
-      list = list.filter(p => p.published !== true && p.is_published !== true);
-    } else if (filter === "pending") {
-      list = list.filter(p => (p.result || p.status || "pending") === "pending");
-    }
-
-    if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="7">No predictions in this category.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = list.map(p => {
-      const id = p.id;
-      const isPublished = p.published === true || p.is_published === true;
-      const result = p.result || p.status || "pending";
-
-      return `
-        <tr>
-          <td>
-            <strong>${escapeHTML(predictionFixtureName(p))}</strong>
-            <br><small>${escapeHTML(p.prediction_date || p.date || "—")}</small>
-          </td>
-          <td>
-            ${escapeHTML(p.market || "—")}
-            <br><strong>${escapeHTML(p.selection || p.pick || "—")}</strong>
-          </td>
-          <td>${escapeHTML(p.odds ?? "—")}</td>
-          <td>${escapeHTML(p.category || "—")}</td>
-          <td>
-            <span class="badge ${isPublished ? "green" : "orange"}">
-              ${isPublished ? "Published" : "Draft"}
-            </span>
-          </td>
-          <td>${escapeHTML(result)}</td>
-          <td>
-            <div class="actions">
-              <button class="btn-light" data-action="edit" data-id="${escapeHTML(id)}">Edit</button>
-              <button class="${isPublished ? "btn-light" : "btn-green"}"
-                data-action="publish" data-id="${escapeHTML(id)}">
-                ${isPublished ? "Unpublish" : "Publish"}
-              </button>
-              <button class="btn-light" data-action="settle" data-id="${escapeHTML(id)}">Settle</button>
-              <button class="btn-red" data-action="delete" data-id="${escapeHTML(id)}">Delete</button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  function clearForm() {
-    $("predictionForm").reset();
-    $("predictionId").value = "";
-    $("formTitle").textContent = "Create prediction";
-    $("saveButton").textContent = "Save prediction";
-    $("predictionDate").value = new Date().toLocaleDateString("en-CA", {
-      timeZone: "Africa/Nairobi"
+$("connect").addEventListener("click",async()=>{
+  try{
+    await refresh();
+    $("app").classList.remove("hidden");
+    $("loginPanel").classList.add("hidden");
+    say("Connected.");
+  }catch(e){say(e.message,true);}
+});
+$("refresh").addEventListener("click",async()=>{try{await refresh();say("Data refreshed.");}catch(e){say(e.message,true);}});
+$("clearPrediction").addEventListener("click",clearPrediction);
+$("predictionForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  try{
+    const value=$("probability").value;
+    await api("/api/admin/predictions",{
+      method:"POST",
+      body:JSON.stringify({
+        id:$("predictionId").value||undefined,
+        match_id:$("match").value||null,
+        prediction_date:$("date").value,
+        category:$("category").value,
+        market:$("market").value,
+        selection:$("selection").value,
+        decimal_odds:$("odds").value===""?null:Number($("odds").value),
+        bookmaker:$("bookmaker").value,
+        estimated_probability:value===""?null:Number(value)/100,
+        confidence_label:$("confidence").value,
+        result:$("result").value,
+        reasoning:$("reasoning").value,
+        is_published:$("publishPrediction").checked
+      })
     });
-    clearNotice("formStatus");
-  }
+    say("Prediction saved.");
+    clearPrediction();
+    await refresh();
+  }catch(e){say(e.message,true);}
+});
+$("addSelection").addEventListener("click",()=>{
+  const id=$("predictionPicker").value;
+  if(!id)return say("Select a prediction first.",true);
+  if(slipItems.some(x=>x.id===id))return say("Already added.",true);
+  const p=prediction(id);
+  slipItems.push({id,odds:p?.decimal_odds??""});
+  renderSlipItems();
+});
+$("slipSelections").addEventListener("input",e=>{
+  const i=e.target.dataset.oddIndex;
+  if(i===undefined)return;
+  slipItems[Number(i)].odds=e.target.value;
+  const odds=slipItems.map(x=>Number(x.odds));
+  const valid=odds.length>0&&odds.every(x=>Number.isFinite(x)&&x>1);
+  $("combinedOdds").textContent=valid?odds.reduce((a,b)=>a*b,1).toFixed(2):"—";
+});
+$("slipSelections").addEventListener("click",e=>{
+  const i=e.target.dataset.removeIndex;
+  if(i===undefined)return;
+  slipItems.splice(Number(i),1);
+  renderSlipItems();
+});
+$("slipCategory").addEventListener("change",renderSlipItems);
+$("clearSlip").addEventListener("click",clearSlip);
+$("saveSlip").addEventListener("click",async()=>{try{await saveSlip(false);}catch(e){say(e.message,true);}});
+$("publishSlip").addEventListener("click",async()=>{try{await saveSlip(true);}catch(e){say(e.message,true);}});
 
-  function editPrediction(id) {
-    const p = predictions.find(item => String(item.id) === String(id));
-    if (!p) return;
-
-    $("predictionId").value = p.id;
-    $("matchId").value = predictionMatchId(p);
-    $("predictionDate").value = String(p.prediction_date || p.date || "").slice(0, 10);
-    $("category").value = p.category || "single";
-    $("market").value = p.market || "1x2";
-    $("selection").value = p.selection || p.pick || "";
-    $("odds").value = p.odds ?? "";
-    $("probability").value = p.probability ?? p.estimated_probability ?? "";
-    $("confidence").value = p.confidence || "medium";
-    $("result").value = p.result || "pending";
-    $("reasoning").value = p.reasoning || p.analysis || "";
-    $("published").checked = p.published === true || p.is_published === true;
-
-    $("formTitle").textContent = "Edit prediction";
-    $("saveButton").textContent = "Update prediction";
-    $("formTitle").scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  async function savePrediction(event) {
-    event.preventDefault();
-    clearNotice("formStatus");
-
-    const id = $("predictionId").value;
-    const payload = {
-      ...(id ? { id } : {}),
-      match_id: $("matchId").value || null,
-      prediction_date: $("predictionDate").value,
-      category: $("category").value,
-      market: $("market").value,
-      selection: $("selection").value.trim(),
-      odds: Number($("odds").value),
-      probability: $("probability").value === ""
-        ? null
-        : Number($("probability").value),
-      confidence: $("confidence").value,
-      result: $("result").value,
-      reasoning: $("reasoning").value.trim(),
-      published: $("published").checked
-    };
-
-    if (!Number.isFinite(payload.odds) || payload.odds < 1.01) {
-      notify("formStatus", "Enter valid decimal odds of at least 1.01.", "error");
-      return;
+$("predictionsTable").addEventListener("click",async e=>{
+  const b=e.target.closest("button");
+  if(!b)return;
+  try{
+    if(b.dataset.edit)return editPrediction(b.dataset.edit);
+    if(b.dataset.toggle){
+      const p=prediction(b.dataset.toggle);
+      await api("/api/admin/predictions",{method:"POST",body:JSON.stringify({...p,is_published:!p.is_published})});
     }
-
-    const button = $("saveButton");
-    const oldText = button.textContent;
-    setBusy(button, true, "Saving...", oldText);
-
-    try {
-      await api("/api/admin/predictions", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-
-      notify("formStatus", "Prediction saved successfully.", "success");
-      clearForm();
-      await loadAdminData();
-      notify("pageStatus", "Prediction data refreshed.", "success");
-    } catch (error) {
-      notify("formStatus", error.message, "error");
-    } finally {
-      setBusy(button, false, oldText, oldText);
+    if(b.dataset.settle){
+      await api("/api/admin/predictions/settle",{method:"POST",body:JSON.stringify({id:b.dataset.settle,result:b.dataset.result})});
     }
-  }
-
-  async function togglePublication(id) {
-    const p = predictions.find(item => String(item.id) === String(id));
-    if (!p) return;
-
-    const isPublished = p.published === true || p.is_published === true;
-    const payload = {
-      ...p,
-      id: p.id,
-      published: !isPublished
-    };
-
-    try {
-      await api("/api/admin/predictions", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-
-      notify("pageStatus", isPublished ? "Prediction unpublished." : "Prediction published.", "success");
-      await loadAdminData();
-    } catch (error) {
-      notify("pageStatus", error.message, "error");
+    if(b.dataset.delete&&confirm("Delete this prediction?")){
+      await api("/api/admin/predictions/delete",{method:"POST",body:JSON.stringify({id:b.dataset.delete})});
     }
-  }
-
-  async function settlePrediction(id) {
-    const p = predictions.find(item => String(item.id) === String(id));
-    if (!p) return;
-
-    const answer = prompt("Enter result: won, lost, void or pending", p.result || "pending");
-    if (answer === null) return;
-
-    const result = answer.trim().toLowerCase();
-    if (!["won", "lost", "void", "pending"].includes(result)) {
-      notify("pageStatus", "Invalid result. Use won, lost, void or pending.", "error");
-      return;
+    await refresh();
+  }catch(err){say(err.message,true);}
+});
+$("slipsTable").addEventListener("click",async e=>{
+  const b=e.target.closest("button");
+  if(!b)return;
+  try{
+    if(b.dataset.slipToggle){
+      const s=data.slips.find(x=>String(x.id)===String(b.dataset.slipToggle));
+      await api("/api/admin/slips/update",{method:"POST",body:JSON.stringify({id:s.id,is_published:!s.is_published})});
     }
-
-    try {
-      await api("/api/admin/predictions/settle", {
-        method: "POST",
-        body: JSON.stringify({ id, result })
-      });
-
-      notify("pageStatus", "Prediction result updated.", "success");
-      await loadAdminData();
-    } catch (error) {
-      notify("pageStatus", error.message, "error");
+    if(b.dataset.slipSettle){
+      await api("/api/admin/slips/update",{method:"POST",body:JSON.stringify({id:b.dataset.slipSettle,status:b.dataset.status})});
     }
-  }
-
-  async function deletePrediction(id) {
-    if (!confirm("Delete this prediction permanently?")) return;
-
-    try {
-      await api("/api/admin/predictions/delete", {
-        method: "POST",
-        body: JSON.stringify({ id })
-      });
-
-      notify("pageStatus", "Prediction deleted.", "success");
-      await loadAdminData();
-    } catch (error) {
-      notify("pageStatus", error.message, "error");
+    if(b.dataset.slipDelete&&confirm("Delete this slip and its selections?")){
+      await api("/api/admin/slips/delete",{method:"POST",body:JSON.stringify({id:b.dataset.slipDelete})});
     }
-  }
-
-  async function runAutomation(path, button, busyText, confirmText) {
-    if (busy) return;
-    if (!confirm(confirmText)) return;
-
-    busy = true;
-    clearNotice("automationStatus");
-
-    const originalText = button.textContent;
-    setBusy(button, true, busyText, originalText);
-
-    try {
-      const result = await api(path, {
-        method: "POST",
-        body: JSON.stringify({})
-      });
-
-      const details = [];
-
-      for (const key of [
-        "message",
-        "summary",
-        "processed",
-        "enriched",
-        "updated",
-        "created",
-        "generated",
-        "skipped",
-        "failed"
-      ]) {
-        if (result[key] !== undefined && result[key] !== null) {
-          details.push(typeof result[key] === "object"
-            ? `${key}: ${JSON.stringify(result[key])}`
-            : `${key}: ${result[key]}`);
-        }
-      }
-
-      let message = "Operation completed.";
-      if (details.length) message += " " + details.join(" · ");
-
-      notify("automationStatus", message, "success");
-
-      await loadAdminData();
-    } catch (error) {
-      notify("automationStatus", error.message, "error");
-    } finally {
-      busy = false;
-      setBusy(button, false, busyText, originalText);
-    }
-  }
-
-  async function login(event) {
-    event.preventDefault();
-    adminToken = $("adminToken").value.trim();
-
-    if (!adminToken) {
-      notify("loginStatus", "Enter your admin token.", "error");
-      return;
-    }
-
-    const button = $("loginButton");
-    button.disabled = true;
-    button.textContent = "Checking...";
-
-    try {
-      await api("/api/admin/data");
-      $("loginCard").classList.add("hidden");
-      $("adminPanel").classList.remove("hidden");
-      await loadAdminData();
-      notify("pageStatus", "Admin connected successfully.", "success");
-    } catch (error) {
-      adminToken = "";
-      notify("loginStatus", error.message, "error");
-    } finally {
-      button.disabled = false;
-      button.textContent = "Sign in";
-    }
-  }
-
-  function logout() {
-    adminToken = "";
-    $("adminToken").value = "";
-    $("adminPanel").classList.add("hidden");
-    $("loginCard").classList.remove("hidden");
-    clearNotice("loginStatus");
-    clearNotice("pageStatus");
-    clearNotice("automationStatus");
-  }
-
-  $("loginForm").addEventListener("submit", login);
-  $("predictionForm").addEventListener("submit", savePrediction);
-  $("refreshButton").addEventListener("click", async () => {
-    const button = $("refreshButton");
-    const oldText = button.textContent;
-    setBusy(button, true, "Refreshing...", oldText);
-
-    try {
-      await loadAdminData();
-      notify("pageStatus", "Dashboard data refreshed.", "success");
-    } catch (error) {
-      notify("pageStatus", error.message, "error");
-    } finally {
-      setBusy(button, false, oldText, oldText);
-    }
-  });
-
-  $("enrichButton").addEventListener("click", () => {
-    runAutomation(
-      "/api/enrich-upcoming",
-      $("enrichButton"),
-      "Enriching...",
-      "Enrich one upcoming match using API-Football? This uses your daily API request allowance."
-    );
-  });
-
-  $("generateButton").addEventListener("click", () => {
-    runAutomation(
-      "/api/generate-predictions",
-      $("generateButton"),
-      "Generating...",
-      "Generate draft predictions from the match data currently saved in BrayTips? Predictions may be skipped if data is missing or the recommendation is not strong enough."
-    );
-  });
-
-  $("cancelEditButton").addEventListener("click", clearForm);
-  $("logoutButton").addEventListener("click", logout);
-  $("predictionFilter").addEventListener("change", renderPredictions);
-
-  $("predictionsTable").addEventListener("click", event => {
-    const button = event.target.closest("button[data-action]");
-    if (!button) return;
-
-    const { action, id } = button.dataset;
-
-    if (action === "edit") editPrediction(id);
-    if (action === "publish") togglePublication(id);
-    if (action === "settle") settlePrediction(id);
-    if (action === "delete") deletePrediction(id);
-  });
-
-  clearForm();
+    await refresh();
+    say("Slip updated.");
+  }catch(err){say(err.message,true);}
+});
+$("import").addEventListener("click",async()=>{
+  try{
+    const r=await api("/api/import-fixtures",{method:"POST"});
+    say(`Imported ${r.imported??0} fixtures.`);
+    await refresh();
+  }catch(e){say(e.message,true);}
+});
+$("enrich").addEventListener("click",async()=>{
+  try{
+    const r=await api("/api/enrich-upcoming?limit=1",{method:"POST"});
+    say(JSON.stringify(r.results||r));
+    await refresh();
+  }catch(e){say(e.message,true);}
+});
+$("generate").addEventListener("click",async()=>{
+  try{
+    const r=await api("/api/generate-predictions",{method:"POST"});
+    say(`Checked ${r.checked??0}; created ${r.created??0} draft predictions.`);
+    await refresh();
+  }catch(e){say(e.message,true);}
+});
+$("date").value=today();
+$("slipDate").value=today();
 })();
 </script>
 </body>
