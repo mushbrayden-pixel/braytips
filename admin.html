@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrayTips | Admin Panel</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --navy: #10233f;
+  --navy2: #18395f;
+  --blue: #246bfd;
+  --blue-light: #eaf1ff;
+  --ink: #15243a;
+  --muted: #738198;
+  --line: #e5ebf3;
+  --surface: #ffffff;
+  --page: #f5f8fc;
+  --green: #16865c;
+  --green-light: #e7f8ef;
+  --red: #c63838;
+  --red-light: #fff0f0;
+  --amber: #a66a00;
+  --amber-light: #fff5dc;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: "DM Sans", sans-serif;
+}
+
+button, input, select, textarea { font: inherit; }
+
+button { cursor: pointer; }
+
+.topbar {
+  background: var(--navy);
+  color: white;
+  padding: 20px;
+}
+
+.topbar-inner {
+  max-width: 1200px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  font: 800 23px "Manrope", sans-serif;
+  letter-spacing: -0.8px;
+}
+
+.brand span { color: #7da7ff; }
+
+.topbar small {
+  display: block;
+  margin-top: 4px;
+  color: #c7d5e9;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 28px auto;
+  padding: 0 18px 40px;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 22px;
+}
+
+h1, h2, h3 {
+  font-family: "Manrope", sans-serif;
+  color: var(--navy);
+}
+
+h1 { font-size: 25px; margin: 0 0 8px; }
+h2 { font-size: 19px; margin: 0 0 18px; }
+h3 { font-size: 15px; margin: 0 0 12px; }
+
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stat {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stat-value {
+  margin-top: 7px;
+  font: 800 26px "Manrope", sans-serif;
+  color: var(--navy);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.field.full { grid-column: 1 / -1; }
+
+label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+input, select, textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #d8e0eb;
+  border-radius: 9px;
+  padding: 11px 12px;
+  background: white;
+  color: var(--ink);
+  outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(36,107,253,.1);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.check-row input {
+  width: 18px;
+  height: 18px;
+}
+
+.check-row label { font-size: 14px; }
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.btn {
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 16px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.btn-primary { background: var(--blue); color: white; }
+.btn-primary:hover { background: #1456db; }
+.btn-dark { background: var(--navy); color: white; }
+.btn-light { background: var(--blue-light); color: var(--navy); }
+.btn-success { background: var(--green-light); color: var(--green); }
+.btn-danger { background: var(--red-light); color: var(--red); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.notice {
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  display: none;
+  overflow-wrap: anywhere;
+}
+
+.notice.success { display: block; background: var(--green-light); color: var(--green); }
+.notice.error { display: block; background: var(--red-light); color: var(--red); }
+.notice.info { display: block; background: var(--blue-light); color: var(--navy); }
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.toolbar input, .toolbar select { max-width: 300px; }
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th, td {
+  text-align: left;
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  background: #f8faff;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+td { overflow-wrap: anywhere; }
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.badge-pending { background: var(--amber-light); color: var(--amber); }
+.badge-won { background: var(--green-light); color: var(--green); }
+.badge-lost { background: var(--red-light); color: var(--red); }
+.badge-void { background: #edf0f5; color: #536174; }
+.badge-published { background: var(--green-light); color: var(--green); }
+.badge-draft { background: #edf0f5; color: #536174; }
+
+.card-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.prediction-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.prediction-card .selection {
+  font: 800 17px "Manrope", sans-serif;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+
+.prediction-card .meta {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.card-actions .btn { padding: 9px 11px; }
+
+.hidden { display: none !important; }
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 20px 0;
+}
+
+@media (max-width: 700px) {
+  .grid, .form-grid, .card-list { grid-template-columns: 1fr; }
+  .field.full { grid-column: auto; }
+  .panel { padding: 16px; }
+  .container { padding: 0 12px 28px; margin-top: 16px; }
+  h1 { font-size: 22px; }
+}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <div class="brand">Bray<span>Tips</span></div>
+      <small>Administration and prediction management</small>
+    </div>
+
+    <div class="actions" style="margin:0">
+      <a href="/" style="color:white;font-size:13px;font-weight:700;padding:10px">
+        View public website ↗
+      </a>
+      <button class="btn btn-light hidden" id="logoutButton" type="button">
+        Log out
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+  <!-- LOGIN -->
+  <section class="panel" id="loginPanel">
+    <h1>Admin login</h1>
+    <p class="muted">
+      Enter the existing BrayTips admin trigger token.
+      This page does not store your Supabase service-role key.
+    </p>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="adminToken">Admin token</label>
+        <input id="adminToken" type="password" required
+          autocomplete="current-password"
+          placeholder="Enter your admin token">
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">Connect to admin panel</button>
+      </div>
+    </form>
+
+    <p class="small muted">
+      If access is denied, the Worker must have the correct
+      ADMIN_TRIGGER_TOKEN secret and the admin routes must be deployed.
+    </p>
+  </section>
+
+  <!-- ADMIN -->
+  <div id="adminPanel" class="hidden">
+
+    <section class="panel">
+      <h1>Admin dashboard</h1>
+      <p class="muted">
+        Manage predictions, publication status and match outcomes.
+      </p>
+
+      <div class="grid">
+        <div class="stat">
+          <div class="stat-label">Fixtures available</div>
+          <div class="stat-value" id="statMatches">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Total predictions</div>
+          <div class="stat-value" id="statPredictions">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Published predictions</div>
+          <div class="stat-value" id="statPublished">—</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-light" id="refreshButton" type="button">
+          Refresh data
+        </button>
+      </div>
+    </section>
+
+    <!-- CREATE / EDIT -->
+    <section class="panel" id="editorPanel">
+      <h2 id="formTitle">Create prediction</h2>
+
+      <form id="predictionForm">
+        <input type="hidden" id="predictionId">
+
+        <div class="form-grid">
+
+          <div class="field full">
+            <label for="matchId">Fixture (optional)</label>
+            <select id="matchId">
+              <option value="">No fixture linked</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="predictionDate">Prediction date</label>
+            <input type="date" id="predictionDate" required>
+          </div>
+
+          <div class="field">
+            <label for="category">Category</label>
+            <select id="category" required>
+              <option value="winner_team">Match result / team market</option>
+              <option value="over_under">Over / under goals</option>
+              <option value="other">Other market</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="market">Market</label>
+            <input id="market" required
+              placeholder="e.g. Double chance">
+          </div>
+
+          <div class="field">
+            <label for="selection">Prediction / selection</label>
+            <input id="selection" required
+              placeholder="e.g. Home team or draw">
+          </div>
+
+          <div class="field">
+            <label for="odds">Decimal odds</label>
+            <input id="odds" type="number" min="1.01"
+              step="0.01" placeholder="e.g. 1.35">
+          </div>
+
+          <div class="field">
+            <label for="probability">Estimated probability (%)</label>
+            <input id="probability" type="number" min="0"
+              max="100" step="0.1" placeholder="e.g. 72">
+          </div>
+
+          <div class="field">
+            <label for="confidence">Confidence label</label>
+            <select id="confidence">
+              <option value="">Not specified</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="result">Result</label>
+            <select id="result">
+              <option value="pending">Pending</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+              <option value="void">Void</option>
+            </select>
+          </div>
+
+          <div class="field full">
+            <label for="reasoning">Analysis / reasoning</label>
+            <textarea id="reasoning"
+              placeholder="Explain the statistical reasoning supporting this prediction."></textarea>
+          </div>
+
+          <div class="field full">
+            <div class="check-row">
+              <input type="checkbox" id="published">
+              <label for="published">Publish this prediction on the public website</label>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="saveButton" type="submit">
+            Save prediction
+          </button>
+          <button class="btn btn-light" id="clearButton" type="button">
+            Clear form
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- PREDICTION LIST -->
+    <section class="panel">
+      <h2>Manage predictions</h2>
+
+      <div class="toolbar">
+        <input id="searchInput" type="search"
+          placeholder="Search selection, market or team">
+
+        <select id="statusFilter" aria-label="Filter predictions">
+          <option value="all">All predictions</option>
+          <option value="published">Published</option>
+          <option value="draft">Drafts</option>
+          <option value="pending">Pending</option>
+          <option value="won">Won</option>
+          <option value="lost">Lost</option>
+          <option value="void">Void</option>
+        </select>
+      </div>
+
+      <div id="predictionList" class="card-list">
+        <p class="muted">Connect to load predictions.</p>
+      </div>
+    </section>
+
+    <!-- FIXTURES -->
+    <section class="panel">
+      <h2>Available fixtures</h2>
+      <p class="muted small">
+        Imported fixtures can be linked to predictions through the form above.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fixture</th>
+              <th>League</th>
+              <th>Kickoff</th>
+            </tr>
+          </thead>
+          <tbody id="fixtureList">
+            <tr><td colspan="3">Connect to load fixtures.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script>
+"use strict";
+
+/*
+ * BrayTips admin frontend.
+ * The Worker remains responsible for authentication and database access.
+ */
+const API_BASE = "https://braytips-api.mushbrayden.workers.dev";
+
+const $ = id => document.getElementById(id);
+
+const state = {
+  token: "",
+  matches: [],
+  predictions: [],
+  slips: [],
+  selections: []
+};
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function showNotice(message, type = "info") {
+  const el = $("notice");
+  el.textContent = message;
+  el.className = "notice " + type;
+  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function clearNotice() {
+  $("notice").className = "notice";
+  $("notice").textContent = "";
+}
+
+function formatDate(value) {
+  if (!value) return "Not specified";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return date.toLocaleString("en-KE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Africa/Nairobi"
+  });
+}
+
+function localDateString() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Nairobi",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+
+  const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+async function api(path, options = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {})
+  };
+
+  if (state.token) {
+    headers["x-admin-token"] = state.token;
+  }
+
+  const response = await fetch(API_BASE + path, {
+    ...options,
+    headers
+  });
+
+  const text = await response.text();
+  let data = {};
+
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error("The Worker returned an invalid response.");
+  }
+
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || data.message ||
+      `Request failed (${response.status}).`);
+  }
+
+  return data;
+}
+
+function normalizeMatch(match) {
+  return {
+    ...match,
+    id: match.id,
+    home_team: match.home_team || "Home team",
+    away_team: match.away_team || "Away team",
+    league_name: match.league_name || "Unknown league"
+  };
+}
+
+function normalizePrediction(prediction) {
+  return {
+    ...prediction,
+    is_published: prediction.is_published === true ||
+      prediction.is_published === "true",
+    result: prediction.result || "pending"
+  };
+}
+
+function getMatch(matchId) {
+  return state.matches.find(m => String(m.id) === String(matchId));
+}
+
+function matchName(matchId) {
+  const match = getMatch(matchId);
+
+  return match
+    ? `${match.home_team} vs ${match.away_team}`
+    : "No linked fixture";
+}
+
+function badgeResult(result) {
+  const allowed = ["pending", "won", "lost", "void"];
+  const safeResult = allowed.includes(result) ? result : "pending";
+
+  return `<span class="badge badge-${safeResult}">${safeResult.toUpperCase()}</span>`;
+}
+
+function badgePublication(published) {
+  return published
+    ? '<span class="badge badge-published">PUBLISHED</span>'
+    : '<span class="badge badge-draft">DRAFT</span>';
+}
+
+function renderStats() {
+  $("statMatches").textContent = state.matches.length;
+  $("statPredictions").textContent = state.predictions.length;
+  $("statPublished").textContent =
+    state.predictions.filter(p => p.is_published).length;
+}
+
+function renderMatchOptions() {
+  const select = $("matchId");
+  const current = select.value;
+
+  select.innerHTML =
+    '<option value="">No fixture linked</option>' +
+    state.matches.map(m => `
+      <option value="${escapeHTML(m.id)}">
+        ${escapeHTML(m.home_team)} vs ${escapeHTML(m.away_team)}
+        — ${escapeHTML(m.league_name)}
+      </option>
+    `).join("");
+
+  if (current) select.value = current;
+}
+
+function renderFixtures() {
+  const tbody = $("fixtureList");
+
+  if (!state.matches.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="3">No fixtures found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = state.matches
+    .slice()
+    .sort((a, b) =>
+      new Date(a.kickoff_at || 0) - new Date(b.kickoff_at || 0)
+    )
+    .slice(0, 100)
+    .map(m => `
+      <tr>
+        <td>
+          <strong>${escapeHTML(m.home_team)} vs ${escapeHTML(m.away_team)}</strong>
+        </td>
+        <td>${escapeHTML(m.league_name)}</td>
+        <td>${escapeHTML(formatDate(m.kickoff_at))}</td>
+      </tr>
+    `).join("");
+}
+
+function renderPredictions() {
+  const list = $("predictionList");
+  const query = $("searchInput").value.trim().toLowerCase();
+  const filter = $("statusFilter").value;
+
+  const filtered = state.predictions.filter(p => {
+    const text = [
+      p.market,
+      p.selection,
+      p.reasoning,
+      matchName(p.match_id)
+    ].join(" ").toLowerCase();
+
+    if (query && !text.includes(query)) return false;
+    if (filter === "published" && !p.is_published) return false;
+    if (filter === "draft" && p.is_published) return false;
+    if (["pending", "won", "lost", "void"].includes(filter) &&
+        p.result !== filter) return false;
+
+    return true;
+  });
+
+  if (!filtered.length) {
+    list.innerHTML =
+      '<p class="muted">No predictions match this filter.</p>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(p => `
+    <article class="prediction-card">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        ${badgePublication(p.is_published)}
+        ${badgeResult(p.result)}
+      </div>
+
+      <div class="selection">${escapeHTML(p.selection)}</div>
+
+      <div class="meta">
+        <div><strong>Fixture:</strong> ${escapeHTML(matchName(p.match_id))}</div>
+        <div><strong>Market:</strong> ${escapeHTML(p.market)}</div>
+        <div><strong>Odds:</strong> ${p.decimal_odds == null
+          ? "Not set" : escapeHTML(Number(p.decimal_odds).toFixed(2))}</div>
+        <div><strong>Category:</strong> ${escapeHTML(p.category)}</div>
+        <div><strong>Confidence:</strong> ${escapeHTML(p.confidence_label || "Not specified")}</div>
+        <div><strong>Probability:</strong> ${p.estimated_probability == null
+          ? "Not specified"
+          : escapeHTML((Number(p.estimated_probability) * 100).toFixed(1) + "%")}</div>
+        <div><strong>Date:</strong> ${escapeHTML(p.prediction_date || "Not specified")}</div>
+      </div>
+
+      ${p.reasoning ? `
+        <hr>
+        <div class="small">${escapeHTML(p.reasoning)}</div>
+      ` : ""}
+
+      <div class="card-actions">
+        <button class="btn btn-light" type="button"
+          data-action="edit" data-id="${escapeHTML(p.id)}">
+          Edit
+        </button>
+
+        <button class="btn ${p.is_published ? "btn-light" : "btn-success"}"
+          type="button" data-action="publish" data-id="${escapeHTML(p.id)}"
+          data-published="${p.is_published}">
+          ${p.is_published ? "Unpublish" : "Publish"}
+        </button>
+
+        ${p.result === "pending" ? `
+          <button class="btn btn-success" type="button"
+            data-action="settle" data-result="won"
+            data-id="${escapeHTML(p.id)}">Won</button>
+
+          <button class="btn btn-danger" type="button"
+            data-action="settle" data-result="lost"
+            data-id="${escapeHTML(p.id)}">Lost</button>
+
+          <button class="btn btn-light" type="button"
+            data-action="settle" data-result="void"
+            data-id="${escapeHTML(p.id)}">Void</button>
+        ` : ""}
+      </div>
+    </article>
+  `).join("");
+}
+
+function resetForm() {
+  $("predictionForm").reset();
+  $("predictionId").value = "";
+  $("predictionDate").value = localDateString();
+  $("result").value = "pending";
+  $("published").checked = false;
+  $("formTitle").textContent = "Create prediction";
+  $("saveButton").textContent = "Save prediction";
+}
+
+function editPrediction(id) {
+  const p = state.predictions.find(x => String(x.id) === String(id));
+
+  if (!p) {
+    showNotice("Prediction not found. Refresh and try again.", "error");
+    return;
+  }
+
+  $("predictionId").value = p.id;
+  $("matchId").value = p.match_id == null ? "" : String(p.match_id);
+  $("predictionDate").value = p.prediction_date || localDateString();
+  $("category").value = p.category || "other";
+  $("market").value = p.market || "";
+  $("selection").value = p.selection || "";
+  $("odds").value = p.decimal_odds ?? "";
+  $("probability").value = p.estimated_probability == null
+    ? "" : Number(p.estimated_probability) * 100;
+  $("confidence").value = p.confidence_label || "";
+  $("result").value = p.result || "pending";
+  $("reasoning").value = p.reasoning || "";
+  $("published").checked = p.is_published;
+
+  $("formTitle").textContent = `Edit prediction #${p.id}`;
+  $("saveButton").textContent = "Update prediction";
+
+  $("editorPanel").scrollIntoView({ behavior: "smooth" });
+}
+
+async function loadAdminData() {
+  clearNotice();
+  $("refreshButton").disabled = true;
+
+  try {
+    const data = await api("/api/admin/data");
+
+    state.matches = (data.matches || []).map(normalizeMatch);
+    state.predictions = (data.predictions || []).map(normalizePrediction);
+    state.slips = data.slips || [];
+    state.selections = data.selections || [];
+
+    renderStats();
+    renderMatchOptions();
+    renderFixtures();
+    renderPredictions();
+
+    showNotice("Admin data loaded successfully.", "success");
+  } catch (error) {
+    showNotice(error.message, "error");
+  } finally {
+    $("refreshButton").disabled = false;
+  }
+}
+
+async function savePrediction(event) {
+  event.preventDefault();
+  clearNotice();
+
+  const id = $("predictionId").value;
+  const oddsText = $("odds").value.trim();
+  const probabilityText = $("probability").value.trim();
+
+  const odds = oddsText === "" ? null : Number(oddsText);
+  const probabilityPercent =
+    probabilityText === "" ? null : Number(probabilityText);
+
+  if (odds !== null && (!Number.isFinite(odds) || odds <= 1)) {
+    showNotice("Decimal odds must be greater than 1.00.", "error");
+    return;
+  }
+
+  if (probabilityPercent !== null &&
+      (!Number.isFinite(probabilityPercent) ||
+       probabilityPercent < 0 || probabilityPercent > 100)) {
+    showNotice("Probability must be between 0 and 100.", "error");
+    return;
+  }
+
+  const payload = {
+    id: id || null,
+    match_id: $("matchId").value || null,
+    prediction_date: $("predictionDate").value,
+    category: $("category").value,
+    market: $("market").value.trim(),
+    selection: $("selection").value.trim(),
+    decimal_odds: odds,
+    estimated_probability: probabilityPercent === null
+      ? null : probabilityPercent / 100,
+    confidence_label: $("confidence").value || null,
+    reasoning: $("reasoning").value.trim(),
+    result: $("result").value,
+    is_published: $("published").checked
+  };
+
+  if (!payload.market || !payload.selection) {
+    showNotice("Enter both the market and the prediction.", "error");
+    return;
+  }
+
+  $("saveButton").disabled = true;
+  $("saveButton").textContent = "Saving…";
+
+  try {
+    await api("/api/admin/predictions", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+
+    resetForm();
+    await loadAdminData();
+    showNotice("Prediction saved successfully.", "success");
+  } catch (error) {
+    showNotice(error.message, "error");
+  } finally {
+    $("saveButton").disabled = false;
+    $("saveButton").textContent = $("predictionId").value
+      ? "Update prediction" : "Save prediction";
+  }
+}
+
+async function togglePublication(id, currentlyPublished) {
+  const p = state.predictions.find(x => String(x.id) === String(id));
+  if (!p) return;
+
+  const action = currentlyPublished ? "unpublish" : "publish";
+
+  if (!confirm(`Are you sure you want to ${action} this prediction?`)) {
+    return;
+  }
+
+  try {
+    await api("/api/admin/predictions", {
+      method: "POST",
+      body: JSON.stringify({
+        ...p,
+        id: p.id,
+        is_published: !currentlyPublished
+      })
+    });
+
+    await loadAdminData();
+    showNotice(`Prediction ${action}ed successfully.`, "success");
+  } catch (error) {
+    showNotice(error.message, "error");
+  }
+}
+
+async function settlePrediction(id, result) {
+  if (!["won", "lost", "void"].includes(result)) return;
+
+  if (!confirm(`Set prediction #${id} to ${result.toUpperCase()}?`)) {
+    return;
+  }
+
+  try {
+    await api("/api/admin/predictions/settle", {
+      method: "POST",
+      body: JSON.stringify({ id, result })
+    });
+
+    await loadAdminData();
+    showNotice(`Prediction settled as ${result.toUpperCase()}.`, "success");
+  } catch (error) {
+    showNotice(error.message, "error");
+  }
+}
+
+function handlePredictionActions(event) {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  const { action, id } = button.dataset;
+
+  if (action === "edit") {
+    editPrediction(id);
+  } else if (action === "publish") {
+    togglePublication(id, button.dataset.published === "true");
+  } else if (action === "settle") {
+    settlePrediction(id, button.dataset.result);
+  }
+}
+
+async function login(event) {
+  event.preventDefault();
+
+  const token = $("adminToken").value.trim();
+
+  if (!token) {
+    showNotice("Enter your admin token.", "error");
+    return;
+  }
+
+  state.token = token;
+
+  try {
+    await loadAdminData();
+
+    // Only show the admin interface if the protected request succeeded.
+    if ($("notice").classList.contains("error")) {
+      state.token = "";
+      return;
+    }
+
+    $("loginPanel").classList.add("hidden");
+    $("adminPanel").classList.remove("hidden");
+    $("logoutButton").classList.remove("hidden");
+    $("adminToken").value = "";
+  } catch (error) {
+    state.token = "";
+    showNotice(error.message, "error");
+  }
+}
+
+function logout() {
+  state.token = "";
+  state.matches = [];
+  state.predictions = [];
+  state.slips = [];
+  state.selections = [];
+
+  $("adminPanel").classList.add("hidden");
+  $("loginPanel").classList.remove("hidden");
+  $("logoutButton").classList.add("hidden");
+
+  resetForm();
+  clearNotice();
+}
+
+$("loginForm").addEventListener("submit", login);
+$("predictionForm").addEventListener("submit", savePrediction);
+$("clearButton").addEventListener("click", resetForm);
+$("refreshButton").addEventListener("click", loadAdminData);
+$("logoutButton").addEventListener("click", logout);
+$("predictionList").addEventListener("click", handlePredictionActions);
+$("searchInput").addEventListener("input", renderPredictions);
+$("statusFilter").addEventListener("change", renderPredictions);
+
+resetForm();
+</script>
+
+</body>
+</html>
