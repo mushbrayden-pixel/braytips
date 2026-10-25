@@ -572,58 +572,111 @@ function predictionCard(prediction) {
 /* =========================================================
    SLIP CARDS
    ========================================================= */
-
 function slipCard(slip) {
-  const odds = Number(slip.odds);
+  const odds = Number(slip.combined_odds ?? slip.odds);
+  const hasOdds = Number.isFinite(odds) && odds > 0;
 
-  const hasOdds =
-    slip.odds !== null &&
-    slip.odds !== "" &&
-    Number.isFinite(odds) &&
-    odds > 0;
+  const selections = Array.isArray(slip.selections)
+    ? slip.selections
+    : [];
+
+  const status = String(slip.status ?? slip.result ?? "pending")
+    .toLowerCase();
+
+  const selectionCards = selections.map((item) => {
+    const prediction = item.prediction || {};
+    const match = prediction.matches || {};
+
+    const home = match.home_team || prediction.home_team || "Home team";
+    const away = match.away_team || prediction.away_team || "Away team";
+    const market = prediction.market || "Prediction";
+    const selection = prediction.selection || "Selection unavailable";
+    const selectionOdds = Number(
+      item.odds_at_publication ?? prediction.decimal_odds
+    );
+
+    const oddsText = Number.isFinite(selectionOdds) && selectionOdds > 0
+      ? selectionOdds.toFixed(2)
+      : "N/A";
+
+    return `
+      <div class="slip-selection">
+        <div class="fixture-meta">
+          <span>${escapeHTML(match.league_name || "Football")}</span>
+          <span>${escapeHTML(formatDate(match.kickoff_at))}</span>
+        </div>
+
+        <h4>
+          ${escapeHTML(home)} vs ${escapeHTML(away)}
+        </h4>
+
+        <p>
+          <strong>Market:</strong> ${escapeHTML(market)}
+        </p>
+
+        <p>
+          <strong>Pick:</strong> ${escapeHTML(selection)}
+        </p>
+
+        <p>
+          <strong>Odds:</strong> ${escapeHTML(oddsText)}
+        </p>
+
+        <p>
+          <strong>Result:</strong>
+          ${escapeHTML(item.result || "pending")}
+        </p>
+      </div>
+    `;
+  }).join("");
 
   return `
-    <article class="prediction-card">
+    <article class="prediction-card slip-card">
       <div class="prediction-heading">
-        <span>${escapeHTML(slip.name)}</span>
+        <span>${escapeHTML(slip.title || slip.name || slip.category || "Betting slip")}</span>
 
-        <span class="result-badge ${escapeHTML(slip.result)}">
-          ${escapeHTML(slip.result)}
+        <span class="result-badge ${escapeHTML(status)}">
+          ${escapeHTML(status)}
         </span>
       </div>
 
-      <h3>
-        ${escapeHTML(slip.name)}
-      </h3>
+      <h3>${escapeHTML(slip.title || slip.name || "Published betting slip")}</h3>
 
       <div class="prediction-details">
         <span>
+          Target odds:
+          <strong>${escapeHTML(slip.target_odds ?? "—")}</strong>
+        </span>
+
+        <span>
           Combined odds:
-          <strong>
-            ${hasOdds ? odds.toFixed(2) : "Not recorded"}
-          </strong>
+          <strong>${hasOdds ? odds.toFixed(3) : "N/A"}</strong>
         </span>
       </div>
 
-      ${
-        slip.reasoning
-          ? `
-            <p class="prediction-reasoning">
-              ${escapeHTML(slip.reasoning)}
-            </p>
-          `
-          : ""
-      }
+      <p>
+        <strong>Selections:</strong> ${selections.length}
+      </p>
 
-      ${
-        slip.slip_date
-          ? `
-            <div class="fixture-meta">
-              Date: ${escapeHTML(slip.slip_date)}
-            </div>
-          `
-          : ""
-      }
+      ${selectionCards || `
+        <div class="empty-state">
+          <p>
+            The slip exists, but its selections could not be loaded.
+          </p>
+        </div>
+      `}
+
+      ${slip.reasoning || slip.notes ? `
+        <p class="prediction-reasoning">
+          ${escapeHTML(slip.reasoning || slip.notes)}
+        </p>
+      ` : ""}
+
+      ${slip.slip_date ? `
+        <div class="fixture-meta">
+          Date: ${escapeHTML(slip.slip_date)}
+        </div>
+      ` : ""}
     </article>
   `;
 }
@@ -718,40 +771,26 @@ function renderPredictions() {
    * predictions form a verified combined-odds ticket.
    */
 
-  const slipsByCategory = {
-    odds2: [],
-    odds5: [],
-    odds10: []
-  };
+const slipsByCategory = {
+  odds2: [],
+  odds5: [],
+  odds10: []
+};
 
-  state.slips.forEach((slip) => {
-    const category = String(
-      slip.category ?? ""
-    ).toLowerCase();
+state.slips.forEach((slip) => {
+  const category = String(slip.category || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
 
-    if (
-      category.includes("odds10") ||
-      category.includes("odds_10") ||
-      category.includes("odds-10") ||
-      category === "10"
-    ) {
-      slipsByCategory.odds10.push(slip);
-    } else if (
-      category.includes("odds5") ||
-      category.includes("odds_5") ||
-      category.includes("odds-5") ||
-      category === "5"
-    ) {
-      slipsByCategory.odds5.push(slip);
-    } else if (
-      category.includes("odds2") ||
-      category.includes("odds_2") ||
-      category.includes("odds-2") ||
-      category === "2"
-    ) {
-      slipsByCategory.odds2.push(slip);
-    }
-  });
+  if (["2_odds", "odds_2", "odds2", "2"].includes(category)) {
+    slipsByCategory.odds2.push(slip);
+  } else if (["5_odds", "odds_5", "odds5", "5"].includes(category)) {
+    slipsByCategory.odds5.push(slip);
+  } else if (["10_odds", "odds_10", "odds10", "10"].includes(category)) {
+    slipsByCategory.odds10.push(slip);
+  }
+});
 
   const containers = {
     odds2: "#odds2Container",
