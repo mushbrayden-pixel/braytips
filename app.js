@@ -1,4 +1,3 @@
-```javascript
 "use strict";
 
 /* =========================================================
@@ -1153,4 +1152,3 @@ if (document.readyState === "loading") {
 } else {
   initializeApp();
 }
-```
