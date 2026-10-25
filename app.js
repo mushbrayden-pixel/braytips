@@ -573,110 +573,107 @@ function predictionCard(prediction) {
    SLIP CARDS
    ========================================================= */
 function slipCard(slip) {
-  const odds = Number(slip.combined_odds ?? slip.odds);
-  const hasOdds = Number.isFinite(odds) && odds > 0;
-
   const selections = Array.isArray(slip.selections)
     ? slip.selections
     : [];
 
-  const status = String(slip.status ?? slip.result ?? "pending")
-    .toLowerCase();
+  const status = String(
+    slip.status || slip.result || "pending"
+  ).toLowerCase();
 
   const selectionCards = selections.map((item) => {
     const prediction = item.prediction || {};
     const match = prediction.matches || {};
 
-    const home = match.home_team || prediction.home_team || "Home team";
-    const away = match.away_team || prediction.away_team || "Away team";
-    const market = prediction.market || "Prediction";
-    const selection = prediction.selection || "Selection unavailable";
-    const selectionOdds = Number(
+    const league = match.league_name || "Football";
+    const home = match.home_team || prediction.home_team || "Home";
+    const away = match.away_team || prediction.away_team || "Away";
+    const pick = prediction.selection || prediction.pick || "N/A";
+
+    const odds = Number(
       item.odds_at_publication ?? prediction.decimal_odds
     );
 
-    const oddsText = Number.isFinite(selectionOdds) && selectionOdds > 0
-      ? selectionOdds.toFixed(2)
-      : "N/A";
+    const oddsText =
+      Number.isFinite(odds) && odds > 0
+        ? odds.toFixed(2)
+        : "N/A";
+
+    const result = String(item.result || "pending").toLowerCase();
+
+    const resultClass = ["won", "lost", "pending", "void"].includes(result)
+      ? result
+      : "pending";
 
     return `
-      <div class="slip-selection">
-        <div class="fixture-meta">
-          <span>${escapeHTML(match.league_name || "Football")}</span>
-          <span>${escapeHTML(formatDate(match.kickoff_at))}</span>
+      <div class="bt-selection">
+        <div class="bt-selection-top">
+          <span class="bt-league">${escapeHTML(league)}</span>
+          <span class="bt-result bt-result-${resultClass}">
+            ${escapeHTML(result)}
+          </span>
         </div>
 
-        <h4>
-          ${escapeHTML(home)} vs ${escapeHTML(away)}
-        </h4>
+        <div class="bt-teams">
+          ${escapeHTML(home)}
+          <span class="bt-vs">vs</span>
+          ${escapeHTML(away)}
+        </div>
 
-        <p>
-          <strong>Market:</strong> ${escapeHTML(market)}
-        </p>
+        <div class="bt-selection-bottom">
+          <div class="bt-pick">
+            <span class="bt-label">PICK</span>
+            <strong>${escapeHTML(pick)}</strong>
+          </div>
 
-        <p>
-          <strong>Pick:</strong> ${escapeHTML(selection)}
-        </p>
-
-        <p>
-          <strong>Odds:</strong> ${escapeHTML(oddsText)}
-        </p>
-
-        <p>
-          <strong>Result:</strong>
-          ${escapeHTML(item.result || "pending")}
-        </p>
+          <div class="bt-odds">
+            <span class="bt-label">ODDS</span>
+            <strong>${escapeHTML(oddsText)}</strong>
+          </div>
+        </div>
       </div>
     `;
   }).join("");
 
-  return `
-    <article class="prediction-card slip-card">
-      <div class="prediction-heading">
-        <span>${escapeHTML(slip.title || slip.name || slip.category || "Betting slip")}</span>
+  const combinedOdds = Number(slip.combined_odds ?? slip.odds);
 
-        <span class="result-badge ${escapeHTML(status)}">
+  return `
+    <article class="prediction-card slip-card bt-slip">
+      <div class="bt-slip-header">
+        <div>
+          <span class="bt-slip-label">DAILY SLIP</span>
+          <h3>${escapeHTML(slip.title || "BrayTips Prediction")}</h3>
+        </div>
+
+        <span class="bt-slip-status bt-slip-${status}">
           ${escapeHTML(status)}
         </span>
       </div>
 
-      <h3>${escapeHTML(slip.title || slip.name || "Published betting slip")}</h3>
-
-      <div class="prediction-details">
-        <span>
-          Target odds:
+      <div class="bt-slip-summary">
+        <div>
+          <span class="bt-label">TARGET ODDS</span>
           <strong>${escapeHTML(slip.target_odds ?? "—")}</strong>
-        </span>
+        </div>
 
-        <span>
-          Combined odds:
-          <strong>${hasOdds ? odds.toFixed(3) : "N/A"}</strong>
-        </span>
+        <div>
+          <span class="bt-label">COMBINED ODDS</span>
+          <strong>
+            ${
+              Number.isFinite(combinedOdds) && combinedOdds > 0
+                ? combinedOdds.toFixed(3)
+                : "N/A"
+            }
+          </strong>
+        </div>
       </div>
 
-      <p>
-        <strong>Selections:</strong> ${selections.length}
-      </p>
-
-      ${selectionCards || `
-        <div class="empty-state">
-          <p>
-            The slip exists, but its selections could not be loaded.
-          </p>
-        </div>
-      `}
-
-      ${slip.reasoning || slip.notes ? `
-        <p class="prediction-reasoning">
-          ${escapeHTML(slip.reasoning || slip.notes)}
-        </p>
-      ` : ""}
-
-      ${slip.slip_date ? `
-        <div class="fixture-meta">
-          Date: ${escapeHTML(slip.slip_date)}
-        </div>
-      ` : ""}
+      <div class="bt-selections">
+        ${
+          selectionCards ||
+          `<p class="bt-empty">No selections available.</p>`
+        }
+      </div>
     </article>
   `;
 }
